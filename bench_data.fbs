@@ -1,0 +1,68 @@
+namespace FlashBenchData;
+
+enum GridType: byte {
+  NHB = 0,
+  NBH,
+  HNB,
+  BNH,
+  BHN,
+  HBN,
+}
+
+enum BalanceType: byte {
+  None = 0,
+  Mode1,
+}
+
+enum OpType: byte {
+  Fwd = 0,
+  Bwd,
+}
+
+table AttentionSolution {
+  head_dim: int32;
+  tile_m: int32;
+  tile_n: int32;
+  num_waves: int32;
+  grid_type: GridType;
+  blance_type: BalanceType;
+  op_type: OpType;
+}
+
+enum DataType: byte {
+  float16 = 0,
+  bfloat16,
+}
+
+enum TAG: byte {
+  Deploy = 0,
+  FwdTest,
+  BwdTest,
+}
+
+table AttentionProblem {
+  dtype: DataType;
+  head_dim: int32;
+  num_heads_q: int32;
+  num_heads_kv: int32;
+  batch_size: int32;
+  seqlens_q: [int32];
+  seqlens_kv: [int32];
+  causal: bool;
+  dropout: bool;
+  alibi: bool;
+  local: bool;
+  attn_mask: bool;
+  deterministic: bool;
+  is_training: bool;
+  solution_fwd: AttentionSolution;
+  solution_bwd: AttentionSolution;
+}
+
+table AttentionBenchTable {
+  problems: [AttentionProblem];
+  version: int32;
+  tag: TAG;
+}
+
+root_type AttentionBenchTable;
