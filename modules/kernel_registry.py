@@ -2,6 +2,7 @@
 # Key: head dimension
 # Value: list of tuples (tile_m, tile_n, num_waves)
 forward_kernels = {}
+forward_kernels_splitkv = {}
 backward_kernels = {}
 
 def register_kernel(kernels_dict, head_dim, tile_m, tile_n, num_waves):
@@ -14,6 +15,10 @@ def register_kernel(kernels_dict, head_dim, tile_m, tile_n, num_waves):
 register_kernel(forward_kernels, 96, 64, 64, 4)
 register_kernel(forward_kernels, 96, 128, 64, 4)
 register_kernel(forward_kernels, 128, 64, 64, 4)
+
+# Register forward kernels with splitKV
+register_kernel(forward_kernels_splitkv, 128, 64, 32, 4)
+register_kernel(forward_kernels_splitkv, 128, 64, 64, 4)
 
 # Register backward kernels
 register_kernel(backward_kernels, 96, 32, 64, 4)

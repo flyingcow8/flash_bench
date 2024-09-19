@@ -54,7 +54,7 @@ def create_test_solution(
     )
 
     # Set tag based on op_type
-    tag = TAG.FwdTest if op_type == OpType.Fwd else TAG.BwdTest
+    tag = TAG.TestFwd if op_type == OpType.Fwd else TAG.TestBwd
     AttentionBenchTable.AttentionBenchTableAddTag(builder, tag)
 
     bench_table = AttentionBenchTable.AttentionBenchTableEnd(builder)

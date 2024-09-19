@@ -52,7 +52,7 @@ class TestGenerateSolution(unittest.TestCase):
 
         # Verify the bench table
         self.assertEqual(bench_table.Version(), 1)
-        self.assertEqual(bench_table.Tag(), TAG.FwdTest)
+        self.assertEqual(bench_table.Tag(), TAG.TestFwd)
         self.assertEqual(bench_table.ProblemsLength(), 1)
 
         # Verify the problem

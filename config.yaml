@@ -6,7 +6,7 @@ dependencies:
   - flatbuffers
 
 input_path:
-  - data/proj_0.yaml
+  - input_data/proj_0.yaml
   # Add more YAML file paths here as needed
   # - /path/to/proj_2.yaml
   # - /path/to/proj_3.yaml
@@ -15,3 +15,5 @@ input_path:
 output_dir: output
 
 profile_verbose: True
+
+enable_splitkv: True

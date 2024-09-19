@@ -14,8 +14,27 @@ enum BalanceType: byte {
   Mode1,
 }
 
-enum OpType: byte {
+enum PyApiType: byte {
+  FlashAttnFunc = 0,
+  FlashAttnQKVPackedFunc,
+  FlashAttnKVPackedFunc,
+  FlashAttnVarlenQKVPackedFunc,
+  FlashAttnVarlenKVPackedFunc,
+  FlashAttnVarlenFunc,
+  FlashAttnWithKVCache,
+}
+
+enum CApiType: byte {
+  MhaFwd = 0,
+  MhaVarlenFwd,
+  MhaBwd,
+  MhaVarlenBwd,
+  MhaFwdKVCache
+}
+
+enum KernelType: byte {
   Fwd = 0,
+  FwdSplitkv,
   Bwd,
 }
 
@@ -26,7 +45,8 @@ table AttentionSolution {
   num_waves: int32;
   grid_type: GridType;
   blance_type: BalanceType;
-  op_type: OpType;
+  num_splits: int32;
+  kernel_type: KernelType;
 }
 
 enum DataType: byte {
@@ -36,8 +56,8 @@ enum DataType: byte {
 
 enum TAG: byte {
   Deploy = 0,
-  FwdTest,
-  BwdTest,
+  TestFwd,
+  TestBwd,
 }
 
 table AttentionProblem {
@@ -54,6 +74,12 @@ table AttentionProblem {
   local: bool;
   attn_mask: bool;
   deterministic: bool;
+  paged_kv: bool;
+  paged_block_size: int32;
+  paged_num_blocks: int32;
+  append_kv: bool;
+  pyapi: PyApiType;
+  capi: CApiType;
   is_training: bool;
   solution_fwd: AttentionSolution;
   solution_bwd: AttentionSolution;

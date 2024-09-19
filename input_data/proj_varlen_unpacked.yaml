@@ -1,4 +1,6 @@
 # MHA (Multi-Head Attention) Parameters
+mha_api: "flash_attn_varlen_func"
+
 mha_params:
   - head_dim: 80
     num_heads_q: 8
@@ -14,7 +16,8 @@ mha_params:
     dropout: false
     causal: true
     alibi: false
-    local: false
+    window_left: -1
+    window_right: -1
     attn_mask: false
     deterministic: false
     is_training: true
@@ -37,7 +40,8 @@ mha_params:
     dropout: false
     causal: true
     alibi: false
-    local: false
+    window_left: -1
+    window_right: -1
     attn_mask: false
     deterministic: false
-    is_training: true    
+    is_training: true

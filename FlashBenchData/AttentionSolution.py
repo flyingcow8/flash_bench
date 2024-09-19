@@ -67,14 +67,21 @@ class AttentionSolution(object):
         return 0
 
     # AttentionSolution
-    def OpType(self):
+    def NumSplits(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
+        return 0
+
+    # AttentionSolution
+    def KernelType(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int8Flags, o + self._tab.Pos)
         return 0
 
 def AttentionSolutionStart(builder):
-    builder.StartObject(7)
+    builder.StartObject(8)
 
 def Start(builder):
     AttentionSolutionStart(builder)
@@ -115,11 +122,17 @@ def AttentionSolutionAddBlanceType(builder, blanceType):
 def AddBlanceType(builder, blanceType):
     AttentionSolutionAddBlanceType(builder, blanceType)
 
-def AttentionSolutionAddOpType(builder, opType):
-    builder.PrependInt8Slot(6, opType, 0)
+def AttentionSolutionAddNumSplits(builder, numSplits):
+    builder.PrependInt32Slot(6, numSplits, 0)
 
-def AddOpType(builder, opType):
-    AttentionSolutionAddOpType(builder, opType)
+def AddNumSplits(builder, numSplits):
+    AttentionSolutionAddNumSplits(builder, numSplits)
+
+def AttentionSolutionAddKernelType(builder, kernelType):
+    builder.PrependInt8Slot(7, kernelType, 0)
+
+def AddKernelType(builder, kernelType):
+    AttentionSolutionAddKernelType(builder, kernelType)
 
 def AttentionSolutionEnd(builder):
     return builder.EndObject()

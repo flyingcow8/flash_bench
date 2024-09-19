@@ -2,7 +2,7 @@
 
 # namespace: FlashBenchData
 
-class OpType(object):
+class KernelType(object):
     Fwd = 0
     FwdSplitkv = 1
     Bwd = 2

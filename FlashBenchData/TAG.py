@@ -4,5 +4,5 @@
 
 class TAG(object):
     Deploy = 0
-    FwdTest = 1
-    BwdTest = 2
+    TestFwd = 1
+    TestBwd = 2
