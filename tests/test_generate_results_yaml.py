@@ -30,18 +30,18 @@ class TestAppendResultsToYaml(unittest.TestCase):
         }
         
         fwd_results = [
-            {"head_dim": 64, "tile_m": 64, "tile_n": 64, "num_waves": 4, "grid_type": 1, "balance_type": 0, "op_type": 0, "time_us": 100.5},
-            {"head_dim": 64, "tile_m": 128, "tile_n": 64, "num_waves": 4, "grid_type": 1, "balance_type": 0, "op_type": 0, "time_us": 95.2}
+            {"head_dim": 64, "block_m": 64, "block_n": 64, "num_warps": 4, "grid_type": 1, "balance_type": 0, "op_type": 0, "time_us": 100.5},
+            {"head_dim": 64, "block_m": 128, "block_n": 64, "num_warps": 4, "grid_type": 1, "balance_type": 0, "op_type": 0, "time_us": 95.2}
         ]
         
-        best_fwd_solution = {"head_dim": 64, "tile_m": 128, "tile_n": 64, "num_waves": 4, "grid_type": 1, "balance_type": 0, "op_type": 0, "time_us": 95.2}
+        best_fwd_solution = {"head_dim": 64, "block_m": 128, "block_n": 64, "num_warps": 4, "grid_type": 1, "balance_type": 0, "op_type": 0, "time_us": 95.2}
         
         bwd_results = [
-            {"head_dim": 64, "tile_m": 32, "tile_n": 64, "num_waves": 4, "grid_type": 1, "balance_type": 0, "op_type": 1, "time_us": 150.3},
-            {"head_dim": 64, "tile_m": 64, "tile_n": 64, "num_waves": 4, "grid_type": 1, "balance_type": 0, "op_type": 1, "time_us": 140.1}
+            {"head_dim": 64, "block_m": 32, "block_n": 64, "num_warps": 4, "grid_type": 1, "balance_type": 0, "op_type": 1, "time_us": 150.3},
+            {"head_dim": 64, "block_m": 64, "block_n": 64, "num_warps": 4, "grid_type": 1, "balance_type": 0, "op_type": 1, "time_us": 140.1}
         ]
         
-        best_bwd_solution = {"head_dim": 64, "tile_m": 64, "tile_n": 64, "num_waves": 4, "grid_type": 1, "balance_type": 0, "op_type": 1, "time_us": 140.1}
+        best_bwd_solution = {"head_dim": 64, "block_m": 64, "block_n": 64, "num_warps": 4, "grid_type": 1, "balance_type": 0, "op_type": 1, "time_us": 140.1}
 
         # Call the function
         append_results_to_yaml(params, fwd_results, best_fwd_solution, bwd_results, best_bwd_solution, self.temp_yaml_file)

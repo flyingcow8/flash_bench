@@ -1,0 +1,60 @@
+bwd:
+  - atom_layout_mdq: 4
+    atom_layout_msdp: 4
+    atom_layout_ndkv: 1
+    block_m: 64
+    block_n: 64
+    hdim_qk: 64
+    hdim_v: 64
+    is_k_in_regs: true
+    is_v_in_regs: true
+    num_warps: 4
+    no_double_buffer: true
+  - atom_layout_mdq: 4
+    atom_layout_msdp: 4
+    atom_layout_ndkv: 2
+    block_m: 64
+    block_n: 64
+    hdim_qk: 64
+    hdim_v: 64
+    is_k_in_regs: true
+    is_v_in_regs: true
+    num_warps: 8
+    no_double_buffer: true
+fwd:
+  - is_Q_in_regs: true
+    share_Q_K_smem: true
+    block_m: 64
+    block_n: 64
+    hdim_qk: 32
+    hdim_v: 32
+    num_warps: 4
+  - is_Q_in_regs: true
+    share_Q_K_smem: true
+    block_m: 64
+    block_n: 64
+    hdim_qk: 64
+    hdim_v: 64
+    num_warps: 4
+  - is_Q_in_regs: true
+    share_Q_K_smem: true
+    block_m: 64
+    block_n: 64
+    hdim_qk: 96
+    hdim_v: 96
+    num_warps: 4
+fwd_split:
+  - is_Q_in_regs: true
+    share_Q_K_smem: true
+    block_m: 64
+    block_n: 64
+    hdim_qk: 32
+    hdim_v: 32
+    num_warps: 4
+  - is_Q_in_regs: true
+    share_Q_K_smem: true
+    block_m: 64
+    block_n: 64
+    hdim_qk: 64
+    hdim_v: 64
+    num_warps: 4

@@ -32,56 +32,63 @@ class AttentionSolution(object):
         return 0
 
     # AttentionSolution
-    def TileM(self):
+    def BlockM(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
     # AttentionSolution
-    def TileN(self):
+    def BlockN(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
     # AttentionSolution
-    def NumWaves(self):
+    def NumWarps(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
     # AttentionSolution
-    def GridType(self):
+    def HeadDimV(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Int8Flags, o + self._tab.Pos)
+            return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
     # AttentionSolution
-    def BlanceType(self):
+    def GridType(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int8Flags, o + self._tab.Pos)
         return 0
 
     # AttentionSolution
-    def NumSplits(self):
+    def BlanceType(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Int8Flags, o + self._tab.Pos)
+        return 0
+
+    # AttentionSolution
+    def NumSplits(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
     # AttentionSolution
     def KernelType(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int8Flags, o + self._tab.Pos)
         return 0
 
 def AttentionSolutionStart(builder):
-    builder.StartObject(8)
+    builder.StartObject(9)
 
 def Start(builder):
     AttentionSolutionStart(builder)
@@ -92,44 +99,50 @@ def AttentionSolutionAddHeadDim(builder, headDim):
 def AddHeadDim(builder, headDim):
     AttentionSolutionAddHeadDim(builder, headDim)
 
-def AttentionSolutionAddTileM(builder, tileM):
-    builder.PrependInt32Slot(1, tileM, 0)
+def AttentionSolutionAddBlockM(builder, blockM):
+    builder.PrependInt32Slot(1, blockM, 0)
 
-def AddTileM(builder, tileM):
-    AttentionSolutionAddTileM(builder, tileM)
+def AddBlockM(builder, blockM):
+    AttentionSolutionAddBlockM(builder, blockM)
 
-def AttentionSolutionAddTileN(builder, tileN):
-    builder.PrependInt32Slot(2, tileN, 0)
+def AttentionSolutionAddBlockN(builder, blockN):
+    builder.PrependInt32Slot(2, blockN, 0)
 
-def AddTileN(builder, tileN):
-    AttentionSolutionAddTileN(builder, tileN)
+def AddBlockN(builder, blockN):
+    AttentionSolutionAddBlockN(builder, blockN)
 
-def AttentionSolutionAddNumWaves(builder, numWaves):
-    builder.PrependInt32Slot(3, numWaves, 0)
+def AttentionSolutionAddNumWarps(builder, numWarps):
+    builder.PrependInt32Slot(3, numWarps, 0)
 
-def AddNumWaves(builder, numWaves):
-    AttentionSolutionAddNumWaves(builder, numWaves)
+def AddNumWarps(builder, numWarps):
+    AttentionSolutionAddNumWarps(builder, numWarps)
+
+def AttentionSolutionAddHeadDimV(builder, headDimV):
+    builder.PrependInt32Slot(4, headDimV, 0)
+
+def AddHeadDimV(builder, headDimV):
+    AttentionSolutionAddHeadDimV(builder, headDimV)
 
 def AttentionSolutionAddGridType(builder, gridType):
-    builder.PrependInt8Slot(4, gridType, 0)
+    builder.PrependInt8Slot(5, gridType, 0)
 
 def AddGridType(builder, gridType):
     AttentionSolutionAddGridType(builder, gridType)
 
 def AttentionSolutionAddBlanceType(builder, blanceType):
-    builder.PrependInt8Slot(5, blanceType, 0)
+    builder.PrependInt8Slot(6, blanceType, 0)
 
 def AddBlanceType(builder, blanceType):
     AttentionSolutionAddBlanceType(builder, blanceType)
 
 def AttentionSolutionAddNumSplits(builder, numSplits):
-    builder.PrependInt32Slot(6, numSplits, 0)
+    builder.PrependInt32Slot(7, numSplits, 0)
 
 def AddNumSplits(builder, numSplits):
     AttentionSolutionAddNumSplits(builder, numSplits)
 
 def AttentionSolutionAddKernelType(builder, kernelType):
-    builder.PrependInt8Slot(7, kernelType, 0)
+    builder.PrependInt8Slot(8, kernelType, 0)
 
 def AddKernelType(builder, kernelType):
     AttentionSolutionAddKernelType(builder, kernelType)
