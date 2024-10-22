@@ -50,18 +50,18 @@ class AttentionBenchTable(object):
         return o == 0
 
     # AttentionBenchTable
-    def Version(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
-        if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
-        return 0
-
-    # AttentionBenchTable
     def Tag(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int8Flags, o + self._tab.Pos)
         return 0
+
+    # AttentionBenchTable
+    def Version(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
 
 def AttentionBenchTableStart(builder):
     builder.StartObject(3)
@@ -81,17 +81,17 @@ def AttentionBenchTableStartProblemsVector(builder, numElems):
 def StartProblemsVector(builder, numElems):
     return AttentionBenchTableStartProblemsVector(builder, numElems)
 
-def AttentionBenchTableAddVersion(builder, version):
-    builder.PrependInt32Slot(1, version, 0)
-
-def AddVersion(builder, version):
-    AttentionBenchTableAddVersion(builder, version)
-
 def AttentionBenchTableAddTag(builder, tag):
-    builder.PrependInt8Slot(2, tag, 0)
+    builder.PrependInt8Slot(1, tag, 0)
 
 def AddTag(builder, tag):
     AttentionBenchTableAddTag(builder, tag)
+
+def AttentionBenchTableAddVersion(builder, version):
+    builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(version), 0)
+
+def AddVersion(builder, version):
+    AttentionBenchTableAddVersion(builder, version)
 
 def AttentionBenchTableEnd(builder):
     return builder.EndObject()

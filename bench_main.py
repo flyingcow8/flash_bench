@@ -10,7 +10,8 @@ from modules.postprocess import (
     create_bench_table_binary,
 )
 from FlashBenchData import AttentionBenchTable
-from modules.config_constants import ALLOWED_MHA_APIS
+from modules.config_constants import FLASH_MHA_APIS
+from modules.kernel_registry import register_kernels
 
 def load_config(config_file):
     with open(config_file, "r") as file:
@@ -28,14 +29,15 @@ def process_input_file(config, input_file, output_dir, builder):
 
     # Check if the mha_api is in the allowed list
     mha_api = params_file['mha_api']
-    if mha_api not in ALLOWED_MHA_APIS:
+    if mha_api not in FLASH_MHA_APIS:
         print(f"Error: Invalid 'mha_api' value '{mha_api}' in {input_file}")
-        print(f"Allowed values are: {', '.join(ALLOWED_MHA_APIS)}")
+        print(f"Allowed values are: {', '.join(FLASH_MHA_APIS)}")
         return []
 
     output_yaml = os.path.join(output_dir, f"{os.path.basename(input_file)}_results.yaml")
     attention_problems = []
 
+    print(f"Testing Api: {mha_api}")
     for idx, params in enumerate(params_file["mha_params"]):
         print(f"Running case {idx}:")
         fwd_results, bwd_results = bench_process(config, params)
@@ -58,8 +60,19 @@ def main():
 
     print(f"Project Name: {config['project']['name']}")
     print(f"Project Version: {config['project']['version']}")
+    print(f"Platform: {config['platform']}")
     print(f"Input files to process: {', '.join(input_files)}")
     print("=" * 50 + "\n")
+
+    # Register kernels from the YAML file
+    kernels_file = config.get("kernels_file")
+    if kernels_file and os.path.exists(kernels_file):
+        print(f"Registering kernels from: {kernels_file}")
+        register_kernels(kernels_file)
+    else:
+        print("Warning: kernel_traits file not found or not specified in config.")
+    print("=" * 50 + "\n")
+
 
     builder = flatbuffers.Builder(1024)
     all_attention_problems = []

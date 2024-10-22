@@ -20,6 +20,7 @@ mha_params:
     window_right: -1
     attn_mask: false
     deterministic: false
+    paged_kv: false
     is_training: true
 
   - head_dim: 80
@@ -44,4 +45,5 @@ mha_params:
     window_right: -1
     attn_mask: false
     deterministic: false
+    paged_kv: false
     is_training: true

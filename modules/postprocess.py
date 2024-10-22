@@ -74,9 +74,9 @@ def create_attention_int_vector(builder, int_list):
 def create_attention_solution(builder, solution):
     AttentionSolution.AttentionSolutionStart(builder)
     AttentionSolution.AttentionSolutionAddHeadDim(builder, solution["head_dim"])
-    AttentionSolution.AttentionSolutionAddTileM(builder, solution["tile_m"])
-    AttentionSolution.AttentionSolutionAddTileN(builder, solution["tile_n"])
-    AttentionSolution.AttentionSolutionAddNumWaves(builder, solution["num_waves"])
+    AttentionSolution.AttentionSolutionAddBlockM(builder, solution["block_m"])
+    AttentionSolution.AttentionSolutionAddBlockN(builder, solution["block_n"])
+    AttentionSolution.AttentionSolutionAddNumWarps(builder, solution["num_warps"])
     AttentionSolution.AttentionSolutionAddGridType(builder, solution["grid_type"])
     AttentionSolution.AttentionSolutionAddBlanceType(builder, solution["balance_type"])
     AttentionSolution.AttentionSolutionAddOpType(builder, solution["op_type"])

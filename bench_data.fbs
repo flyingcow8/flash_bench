@@ -14,7 +14,7 @@ enum BalanceType: byte {
   Mode1,
 }
 
-enum PyApiType: byte {
+enum ApiType: byte {
   FlashAttnFunc = 0,
   FlashAttnQKVPackedFunc,
   FlashAttnKVPackedFunc,
@@ -22,14 +22,6 @@ enum PyApiType: byte {
   FlashAttnVarlenKVPackedFunc,
   FlashAttnVarlenFunc,
   FlashAttnWithKVCache,
-}
-
-enum CApiType: byte {
-  MhaFwd = 0,
-  MhaVarlenFwd,
-  MhaBwd,
-  MhaVarlenBwd,
-  MhaFwdKVCache
 }
 
 enum KernelType: byte {
@@ -40,13 +32,26 @@ enum KernelType: byte {
 
 table AttentionSolution {
   head_dim: int32;
-  tile_m: int32;
-  tile_n: int32;
-  num_waves: int32;
+  block_m: int32;
+  block_n: int32;
+  num_warps: int32;
+  head_dim_v: int32;
   grid_type: GridType;
-  blance_type: BalanceType;
-  num_splits: int32;
   kernel_type: KernelType;
+  kernel_id: string;
+  // fwd or bwd
+  balance_type: BalanceType;
+  // fwd or fwd_split
+  is_q_in_regs: bool;
+  share_q_k_smem: bool;
+  num_splits: int32;
+  // bwd
+  is_k_in_regs: bool;
+  is_v_in_regs: bool;
+  atom_layout_mdq: int32;
+  atom_layout_msdp: int32;
+  atom_layout_ndkv: int32;
+  no_double_buffer: bool
 }
 
 enum DataType: byte {
@@ -78,8 +83,7 @@ table AttentionProblem {
   paged_block_size: int32;
   paged_num_blocks: int32;
   append_kv: bool;
-  pyapi: PyApiType;
-  capi: CApiType;
+  api: ApiType;
   is_training: bool;
   solution_fwd: AttentionSolution;
   solution_bwd: AttentionSolution;
@@ -87,8 +91,8 @@ table AttentionProblem {
 
 table AttentionBenchTable {
   problems: [AttentionProblem];
-  version: int32;
   tag: TAG;
+  version: string;
 }
 
 root_type AttentionBenchTable;

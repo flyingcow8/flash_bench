@@ -29,9 +29,9 @@ class TestGenerateBenchTable(unittest.TestCase):
         # Create mock solutions
         mock_solution = {
             "head_dim": mha_params['head_dim'],
-            "tile_m": 64,
-            "tile_n": 64,
-            "num_waves": 4,
+            "block_m": 64,
+            "block_n": 64,
+            "num_warps": 4,
             "grid_type": GridType.NHB,
             "balance_type": BalanceType.Mode1,
             "op_type": OpType.Fwd

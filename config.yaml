@@ -1,6 +1,6 @@
 project:
   name: FlashBench
-  version: 1
+  version: 1.0
 
 dependencies:
   - flatbuffers
@@ -11,9 +11,19 @@ input_path:
   # - /path/to/proj_2.yaml
   # - /path/to/proj_3.yaml
 
+kernels_file: ./attention_kernels.yaml
 
 output_dir: output
 
 profile_verbose: True
 
-enable_splitkv: True
+# if not specified, all grid types will be tested 
+grid_types:
+  - 4
+  - 5
+
+# if not specified, all balance types will be tested 
+balance_types:
+  - 0
+
+platform: MXC500

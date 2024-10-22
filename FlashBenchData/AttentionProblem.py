@@ -184,29 +184,22 @@ class AttentionProblem(object):
         return False
 
     # AttentionProblem
-    def Pyapi(self):
+    def Api(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(38))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int8Flags, o + self._tab.Pos)
         return 0
 
     # AttentionProblem
-    def Capi(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(40))
-        if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Int8Flags, o + self._tab.Pos)
-        return 0
-
-    # AttentionProblem
     def IsTraining(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(42))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(40))
         if o != 0:
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
     # AttentionProblem
     def SolutionFwd(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(44))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(42))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from FlashBenchData.AttentionSolution import AttentionSolution
@@ -217,7 +210,7 @@ class AttentionProblem(object):
 
     # AttentionProblem
     def SolutionBwd(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(46))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(44))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from FlashBenchData.AttentionSolution import AttentionSolution
@@ -227,7 +220,7 @@ class AttentionProblem(object):
         return None
 
 def AttentionProblemStart(builder):
-    builder.StartObject(22)
+    builder.StartObject(21)
 
 def Start(builder):
     AttentionProblemStart(builder)
@@ -346,32 +339,26 @@ def AttentionProblemAddAppendKv(builder, appendKv):
 def AddAppendKv(builder, appendKv):
     AttentionProblemAddAppendKv(builder, appendKv)
 
-def AttentionProblemAddPyapi(builder, pyapi):
-    builder.PrependInt8Slot(17, pyapi, 0)
+def AttentionProblemAddApi(builder, api):
+    builder.PrependInt8Slot(17, api, 0)
 
-def AddPyapi(builder, pyapi):
-    AttentionProblemAddPyapi(builder, pyapi)
-
-def AttentionProblemAddCapi(builder, capi):
-    builder.PrependInt8Slot(18, capi, 0)
-
-def AddCapi(builder, capi):
-    AttentionProblemAddCapi(builder, capi)
+def AddApi(builder, api):
+    AttentionProblemAddApi(builder, api)
 
 def AttentionProblemAddIsTraining(builder, isTraining):
-    builder.PrependBoolSlot(19, isTraining, 0)
+    builder.PrependBoolSlot(18, isTraining, 0)
 
 def AddIsTraining(builder, isTraining):
     AttentionProblemAddIsTraining(builder, isTraining)
 
 def AttentionProblemAddSolutionFwd(builder, solutionFwd):
-    builder.PrependUOffsetTRelativeSlot(20, flatbuffers.number_types.UOffsetTFlags.py_type(solutionFwd), 0)
+    builder.PrependUOffsetTRelativeSlot(19, flatbuffers.number_types.UOffsetTFlags.py_type(solutionFwd), 0)
 
 def AddSolutionFwd(builder, solutionFwd):
     AttentionProblemAddSolutionFwd(builder, solutionFwd)
 
 def AttentionProblemAddSolutionBwd(builder, solutionBwd):
-    builder.PrependUOffsetTRelativeSlot(21, flatbuffers.number_types.UOffsetTFlags.py_type(solutionBwd), 0)
+    builder.PrependUOffsetTRelativeSlot(20, flatbuffers.number_types.UOffsetTFlags.py_type(solutionBwd), 0)
 
 def AddSolutionBwd(builder, solutionBwd):
     AttentionProblemAddSolutionBwd(builder, solutionBwd)

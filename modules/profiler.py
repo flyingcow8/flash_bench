@@ -37,6 +37,12 @@ def find_flash_fwd_cuda_time(prof):
             return item.cuda_time # returns time in microseconds (μs)
     return None  # Return None if 'flash_fwd' is not found
 
+def find_flash_fwd_splitkv_cuda_time(prof):
+    for item in prof.key_averages():
+        if 'flash_fwd_splitkv_kernel' in item.key:
+            return item.cuda_time # returns time in microseconds (μs)
+    return None  # Return None if 'flash_fwd_splitkv' is not found
+
 # def pytorch_profiler(
 #     fn,
 #     *inputs,
