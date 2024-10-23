@@ -32,26 +32,11 @@ enum KernelType: byte {
 
 table AttentionSolution {
   head_dim: int32;
-  block_m: int32;
-  block_n: int32;
-  num_warps: int32;
-  head_dim_v: int32;
   grid_type: GridType;
+  balance_type: BalanceType;
+  num_splits: int32;
   kernel_type: KernelType;
   kernel_id: string;
-  // fwd or bwd
-  balance_type: BalanceType;
-  // fwd or fwd_split
-  is_q_in_regs: bool;
-  share_q_k_smem: bool;
-  num_splits: int32;
-  // bwd
-  is_k_in_regs: bool;
-  is_v_in_regs: bool;
-  atom_layout_mdq: int32;
-  atom_layout_msdp: int32;
-  atom_layout_ndkv: int32;
-  no_double_buffer: bool
 }
 
 enum DataType: byte {
@@ -76,7 +61,8 @@ table AttentionProblem {
   causal: bool;
   dropout: bool;
   alibi: bool;
-  local: bool;
+  window_left: int32;
+  window_right: int32;
   attn_mask: bool;
   deterministic: bool;
   paged_kv: bool;

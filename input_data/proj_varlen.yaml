@@ -2,7 +2,7 @@
 mha_api: "flash_attn_varlen_func"
 
 mha_params:
-  - head_dim: 80
+  - head_dim: 64
     num_heads_q: 8
     num_heads_kv: 8
     batch_size: 2
@@ -23,7 +23,7 @@ mha_params:
     paged_kv: false
     is_training: true
 
-  - head_dim: 80
+  - head_dim: 64
     num_heads_q: 8
     num_heads_kv: 8
     batch_size: 4

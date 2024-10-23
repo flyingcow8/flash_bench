@@ -135,71 +135,78 @@ class AttentionProblem(object):
         return False
 
     # AttentionProblem
-    def Local(self):
+    def WindowLeft(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
-        return False
+            return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
+        return 0
+
+    # AttentionProblem
+    def WindowRight(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
+        return 0
 
     # AttentionProblem
     def AttnMask(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
-        if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
-        return False
-
-    # AttentionProblem
-    def Deterministic(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
         if o != 0:
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
     # AttentionProblem
-    def PagedKv(self):
+    def Deterministic(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
         if o != 0:
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
     # AttentionProblem
-    def PagedBlockSize(self):
+    def PagedKv(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(32))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
-        return 0
+            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+        return False
 
     # AttentionProblem
-    def PagedNumBlocks(self):
+    def PagedBlockSize(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(34))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
     # AttentionProblem
-    def AppendKv(self):
+    def PagedNumBlocks(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(36))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
+        return 0
+
+    # AttentionProblem
+    def AppendKv(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(38))
         if o != 0:
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
     # AttentionProblem
     def Api(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(38))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(40))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int8Flags, o + self._tab.Pos)
         return 0
 
     # AttentionProblem
     def IsTraining(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(40))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(42))
         if o != 0:
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
     # AttentionProblem
     def SolutionFwd(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(42))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(44))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from FlashBenchData.AttentionSolution import AttentionSolution
@@ -210,7 +217,7 @@ class AttentionProblem(object):
 
     # AttentionProblem
     def SolutionBwd(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(44))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(46))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from FlashBenchData.AttentionSolution import AttentionSolution
@@ -220,7 +227,7 @@ class AttentionProblem(object):
         return None
 
 def AttentionProblemStart(builder):
-    builder.StartObject(21)
+    builder.StartObject(22)
 
 def Start(builder):
     AttentionProblemStart(builder)
@@ -297,68 +304,74 @@ def AttentionProblemAddAlibi(builder, alibi):
 def AddAlibi(builder, alibi):
     AttentionProblemAddAlibi(builder, alibi)
 
-def AttentionProblemAddLocal(builder, local):
-    builder.PrependBoolSlot(10, local, 0)
+def AttentionProblemAddWindowLeft(builder, windowLeft):
+    builder.PrependInt32Slot(10, windowLeft, 0)
 
-def AddLocal(builder, local):
-    AttentionProblemAddLocal(builder, local)
+def AddWindowLeft(builder, windowLeft):
+    AttentionProblemAddWindowLeft(builder, windowLeft)
+
+def AttentionProblemAddWindowRight(builder, windowRight):
+    builder.PrependInt32Slot(11, windowRight, 0)
+
+def AddWindowRight(builder, windowRight):
+    AttentionProblemAddWindowRight(builder, windowRight)
 
 def AttentionProblemAddAttnMask(builder, attnMask):
-    builder.PrependBoolSlot(11, attnMask, 0)
+    builder.PrependBoolSlot(12, attnMask, 0)
 
 def AddAttnMask(builder, attnMask):
     AttentionProblemAddAttnMask(builder, attnMask)
 
 def AttentionProblemAddDeterministic(builder, deterministic):
-    builder.PrependBoolSlot(12, deterministic, 0)
+    builder.PrependBoolSlot(13, deterministic, 0)
 
 def AddDeterministic(builder, deterministic):
     AttentionProblemAddDeterministic(builder, deterministic)
 
 def AttentionProblemAddPagedKv(builder, pagedKv):
-    builder.PrependBoolSlot(13, pagedKv, 0)
+    builder.PrependBoolSlot(14, pagedKv, 0)
 
 def AddPagedKv(builder, pagedKv):
     AttentionProblemAddPagedKv(builder, pagedKv)
 
 def AttentionProblemAddPagedBlockSize(builder, pagedBlockSize):
-    builder.PrependInt32Slot(14, pagedBlockSize, 0)
+    builder.PrependInt32Slot(15, pagedBlockSize, 0)
 
 def AddPagedBlockSize(builder, pagedBlockSize):
     AttentionProblemAddPagedBlockSize(builder, pagedBlockSize)
 
 def AttentionProblemAddPagedNumBlocks(builder, pagedNumBlocks):
-    builder.PrependInt32Slot(15, pagedNumBlocks, 0)
+    builder.PrependInt32Slot(16, pagedNumBlocks, 0)
 
 def AddPagedNumBlocks(builder, pagedNumBlocks):
     AttentionProblemAddPagedNumBlocks(builder, pagedNumBlocks)
 
 def AttentionProblemAddAppendKv(builder, appendKv):
-    builder.PrependBoolSlot(16, appendKv, 0)
+    builder.PrependBoolSlot(17, appendKv, 0)
 
 def AddAppendKv(builder, appendKv):
     AttentionProblemAddAppendKv(builder, appendKv)
 
 def AttentionProblemAddApi(builder, api):
-    builder.PrependInt8Slot(17, api, 0)
+    builder.PrependInt8Slot(18, api, 0)
 
 def AddApi(builder, api):
     AttentionProblemAddApi(builder, api)
 
 def AttentionProblemAddIsTraining(builder, isTraining):
-    builder.PrependBoolSlot(18, isTraining, 0)
+    builder.PrependBoolSlot(19, isTraining, 0)
 
 def AddIsTraining(builder, isTraining):
     AttentionProblemAddIsTraining(builder, isTraining)
 
 def AttentionProblemAddSolutionFwd(builder, solutionFwd):
-    builder.PrependUOffsetTRelativeSlot(19, flatbuffers.number_types.UOffsetTFlags.py_type(solutionFwd), 0)
+    builder.PrependUOffsetTRelativeSlot(20, flatbuffers.number_types.UOffsetTFlags.py_type(solutionFwd), 0)
 
 def AddSolutionFwd(builder, solutionFwd):
     AttentionProblemAddSolutionFwd(builder, solutionFwd)
 
 def AttentionProblemAddSolutionBwd(builder, solutionBwd):
-    builder.PrependUOffsetTRelativeSlot(20, flatbuffers.number_types.UOffsetTFlags.py_type(solutionBwd), 0)
+    builder.PrependUOffsetTRelativeSlot(21, flatbuffers.number_types.UOffsetTFlags.py_type(solutionBwd), 0)
 
 def AddSolutionBwd(builder, solutionBwd):
     AttentionProblemAddSolutionBwd(builder, solutionBwd)

@@ -1,13 +1,15 @@
 # FlashBench
 
-## Generate the flatbuffers api for python
+## Compile the flatbuffers schema
 ```
 flatc --python bench_data.fbs
 ```
-## Run the tests
+flatc is the linux version, and flatc.exe is the windows version.
+
+## Run the unit tests
 ```
-python -m unittest tests/test_generate_solution.py
-python -m unittest tests/test_generate_results_yaml.py
+python -m unittest tests/test_create_solution.py
+python -m unittest tests/test_create_bench_table.py
 ```
 ## Run the benchmark
 ```

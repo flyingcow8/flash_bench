@@ -1,19 +1,13 @@
-import yaml
 from FlashBenchData import (
     AttentionBenchTable,
     AttentionProblem,
     AttentionSolution,
 )
 from FlashBenchData.DataType import DataType
-from collections import OrderedDict
-import yaml
+import flatbuffers
 
-
-def ordered_dict_representer(dumper, data):
-    return dumper.represent_mapping("tag:yaml.org,2002:map", data.items())
-
-
-yaml.add_representer(OrderedDict, ordered_dict_representer)
+from FlashBenchData.KernelType import KernelType
+from FlashBenchData.TAG import TAG
 
 
 def convert_dtype_to_fb(dtype_str):
@@ -31,39 +25,6 @@ def convert_dtype_to_fb(dtype_str):
     )  # Default to bfloat16 if not found
 
 
-def find_best_solution(solutions):
-    if not solutions:
-        return {}  # Return an empty dict if results is empty
-
-    return min(solutions, key=lambda x: x.get("time_us", float("inf")))
-
-
-def append_results_to_yaml(
-    params, fwd_results, best_fwd_solution, bwd_results, best_bwd_solution, output_file
-):
-    # Create a new dictionary to maintain the desired order
-    ordered_params = OrderedDict()
-
-    # Copy existing keys from params
-    for key in params:
-        ordered_params[key] = params[key]
-
-    ordered_params["fwd_results"] = [
-        str(list(result.values())) for result in fwd_results
-    ]
-    ordered_params["best_fwd_solution"] = str(list(best_fwd_solution.values()))
-
-    if params.get("is_training", True):
-        ordered_params["bwd_results"] = [
-            str(list(result.values())) for result in bwd_results
-        ]
-        ordered_params["best_bwd_solution"] = str(list(best_bwd_solution.values()))
-
-    with open(output_file, "a") as f:
-        yaml.dump([ordered_params], f, default_flow_style=False)
-        f.write("\n")  # Add a newline for better readability between entries
-
-
 def create_attention_int_vector(builder, int_list):
     AttentionProblem.AttentionProblemStartSeqlensQVector(builder, len(int_list))
     for it in reversed(int_list):
@@ -72,14 +33,14 @@ def create_attention_int_vector(builder, int_list):
 
 
 def create_attention_solution(builder, solution):
+    kernel_id_offset = builder.CreateString(solution["kernel_id"])
     AttentionSolution.AttentionSolutionStart(builder)
     AttentionSolution.AttentionSolutionAddHeadDim(builder, solution["head_dim"])
-    AttentionSolution.AttentionSolutionAddBlockM(builder, solution["block_m"])
-    AttentionSolution.AttentionSolutionAddBlockN(builder, solution["block_n"])
-    AttentionSolution.AttentionSolutionAddNumWarps(builder, solution["num_warps"])
     AttentionSolution.AttentionSolutionAddGridType(builder, solution["grid_type"])
-    AttentionSolution.AttentionSolutionAddBlanceType(builder, solution["balance_type"])
-    AttentionSolution.AttentionSolutionAddOpType(builder, solution["op_type"])
+    AttentionSolution.AttentionSolutionAddBalanceType(builder, solution["balance_type"])
+    AttentionSolution.AttentionSolutionAddKernelType(builder, solution["kernel_type"])
+    AttentionSolution.AttentionSolutionAddNumSplits(builder, solution["num_splits"])
+    AttentionSolution.AttentionSolutionAddKernelId(builder, kernel_id_offset)
     return AttentionSolution.AttentionSolutionEnd(builder)
 
 
@@ -104,7 +65,8 @@ def create_attention_problem(builder, params, best_fwd_solution, best_bwd_soluti
     AttentionProblem.AttentionProblemAddCausal(builder, params["causal"])
     AttentionProblem.AttentionProblemAddDropout(builder, params["dropout"])
     AttentionProblem.AttentionProblemAddAlibi(builder, params["alibi"])
-    AttentionProblem.AttentionProblemAddLocal(builder, params["local"])
+    AttentionProblem.AttentionProblemAddWindowLeft(builder, params["window_left"])
+    AttentionProblem.AttentionProblemAddWindowRight(builder, params["window_right"])
     AttentionProblem.AttentionProblemAddAttnMask(builder, params["attn_mask"])
     AttentionProblem.AttentionProblemAddDeterministic(builder, params["deterministic"])
     AttentionProblem.AttentionProblemAddIsTraining(builder, params["is_training"])
@@ -122,11 +84,14 @@ def create_bench_table_binary(
         builder.PrependUOffsetTRelative(problem)
     problems_vector = builder.EndVector()
 
+    # Create a string of version
+    version_offset = builder.CreateString(config["project"]["version"])
+
     # Create an AttentionBenchTable
     AttentionBenchTable.AttentionBenchTableStart(builder)
     AttentionBenchTable.AttentionBenchTableAddProblems(builder, problems_vector)
-    version = config["project"]["version"]
-    AttentionBenchTable.AttentionBenchTableAddVersion(builder, version)
+    AttentionBenchTable.AttentionBenchTableAddTag(builder, TAG.Deploy)
+    AttentionBenchTable.AttentionBenchTableAddVersion(builder, version_offset)
     bench_table = AttentionBenchTable.AttentionBenchTableEnd(builder)
 
     # Finish the FlatBuffer
@@ -137,4 +102,66 @@ def create_bench_table_binary(
 
     # Now you can write this buffer to a file or send it over the network
     with open(output_file, "wb") as f:
+        f.write(buf)
+
+
+def create_solution_test_binary(
+    head_dim,
+    grid_type,
+    kernel_type,
+    kernel_id,
+    version,
+    balance_type=0,
+    num_splits=1,
+    output_dir="./",
+):
+    builder = flatbuffers.Builder(1024)
+
+    # Create string offset for kernel_id first
+    kernel_id_offset = builder.CreateString(kernel_id)
+
+    # Create AttentionSolution
+    AttentionSolution.AttentionSolutionStart(builder)
+    AttentionSolution.AttentionSolutionAddHeadDim(builder, head_dim)
+    AttentionSolution.AttentionSolutionAddGridType(builder, grid_type)
+    AttentionSolution.AttentionSolutionAddKernelType(builder, kernel_type)
+    AttentionSolution.AttentionSolutionAddNumSplits(builder, num_splits)
+    AttentionSolution.AttentionSolutionAddBalanceType(builder, balance_type)
+    AttentionSolution.AttentionSolutionAddKernelId(builder, kernel_id_offset)
+
+    solution = AttentionSolution.AttentionSolutionEnd(builder)
+
+    # Create AttentionProblem
+    from FlashBenchData import AttentionProblem
+
+    AttentionProblem.AttentionProblemStart(builder)
+    if kernel_type == KernelType.Fwd:
+        AttentionProblem.AttentionProblemAddSolutionFwd(builder, solution)
+    elif kernel_type == KernelType.Bwd:
+        AttentionProblem.AttentionProblemAddSolutionBwd(builder, solution)
+    problem = AttentionProblem.AttentionProblemEnd(builder)
+
+    # Create vector of problems
+    from FlashBenchData import AttentionBenchTable
+
+    AttentionBenchTable.AttentionBenchTableStartProblemsVector(builder, 1)
+    builder.PrependUOffsetTRelative(problem)
+    problems = builder.EndVector()
+
+    # Create AttentionBenchTable
+    version_offset = builder.CreateString(version)
+    AttentionBenchTable.AttentionBenchTableStart(builder)
+    AttentionBenchTable.AttentionBenchTableAddProblems(builder, problems)
+    AttentionBenchTable.AttentionBenchTableAddVersion(builder, version_offset)
+
+    # Set tag based on kernel_type
+    tag = TAG.TestFwd if kernel_type == KernelType.Fwd else TAG.TestBwd
+    AttentionBenchTable.AttentionBenchTableAddTag(builder, tag)
+
+    bench_table = AttentionBenchTable.AttentionBenchTableEnd(builder)
+
+    builder.Finish(bench_table)
+    buf = builder.Output()
+
+    with open(f"{output_dir}/test_solution.bin", "wb") as f:
         f.write(buf)
