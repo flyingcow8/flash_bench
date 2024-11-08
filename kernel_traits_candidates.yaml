@@ -1,5 +1,5 @@
 bwd:
-- kernel_id: hdimqk_64_hdimv_64_blockm_64_blockn_64_4_4_1_4_True_True_True
+- kernel_id: bwd_hdimqk_64_hdimv_64_blockm_64_blockn_64_4_4_1_4_True_True_True
   atom_layout_mdq: 4
   atom_layout_msdp: 4
   atom_layout_ndkv: 1
@@ -11,7 +11,7 @@ bwd:
   is_v_in_regs: true
   no_double_buffer: true
   num_warps: 4
-- kernel_id: hdimqk_64_hdimv_64_blockm_64_blockn_64_8_4_2_4_True_True_True
+- kernel_id: bwd_hdimqk_64_hdimv_64_blockm_64_blockn_64_8_4_2_4_True_True_True
   atom_layout_mdq: 4
   atom_layout_msdp: 4
   atom_layout_ndkv: 2
@@ -24,7 +24,7 @@ bwd:
   no_double_buffer: true
   num_warps: 8
 fwd:
-- kernel_id: hdimqk_64_hdimv_64_blockm_64_blockn_64_4_True_True_False
+- kernel_id: fwd_hdimqk_64_hdimv_64_blockm_64_blockn_64_4_True_True_False
   Is_Q_in_regs: true
   Share_Q_K_smem: true
   block_m: 64
@@ -34,7 +34,7 @@ fwd:
   is_splits: false
   num_warps: 4
 fwd_split:
-- kernel_id: hdimqk_64_hdimv_64_blockm_64_blockn_64_4_True_True_True
+- kernel_id: fwd_hdimqk_64_hdimv_64_blockm_64_blockn_64_4_True_True_True
   Is_Q_in_regs: true
   Share_Q_K_smem: true
   block_m: 64
@@ -43,7 +43,7 @@ fwd_split:
   hdim_v: 64
   is_splits: true
   num_warps: 4
-- kernel_id: hdimqk_64_hdimv_64_blockm_64_blockn_64_4_True_True_False
+- kernel_id: fwd_hdimqk_64_hdimv_64_blockm_64_blockn_64_4_True_True_False
   Is_Q_in_regs: true
   Share_Q_K_smem: true
   block_m: 64

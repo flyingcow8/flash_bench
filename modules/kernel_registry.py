@@ -1,9 +1,12 @@
 # Dictionaries to store forward and backward kernel information
 # Key: head dimension
 # Value: list of dicts
-forward_kernels = {"hdim32":[], "hdim64":[], "hdim96":[], "hdim128":[], "hdim160":[], "hdim192":[], "hdim224":[], "hdim256":[]}
-forward_splitkv_kernels = {"hdim32":[], "hdim64":[], "hdim96":[], "hdim128":[], "hdim160":[], "hdim192":[], "hdim224":[], "hdim256":[]}
-backward_kernels = {"hdim32":[], "hdim64":[], "hdim96":[], "hdim128":[], "hdim160":[], "hdim192":[], "hdim224":[], "hdim256":[]}
+forward_kernels_fp16 = {"hdim32":[], "hdim64":[], "hdim96":[], "hdim128":[], "hdim160":[], "hdim192":[], "hdim224":[], "hdim256":[]}
+forward_kernels_bf16 = {"hdim32":[], "hdim64":[], "hdim96":[], "hdim128":[], "hdim160":[], "hdim192":[], "hdim224":[], "hdim256":[]}
+forward_splitkv_kernels_fp16 = {"hdim32":[], "hdim64":[], "hdim96":[], "hdim128":[], "hdim160":[], "hdim192":[], "hdim224":[], "hdim256":[]}
+forward_splitkv_kernels_bf16 = {"hdim32":[], "hdim64":[], "hdim96":[], "hdim128":[], "hdim160":[], "hdim192":[], "hdim224":[], "hdim256":[]}
+backward_kernels_fp16 = {"hdim32":[], "hdim64":[], "hdim96":[], "hdim128":[], "hdim160":[], "hdim192":[], "hdim224":[], "hdim256":[]}
+backward_kernels_bf16 = {"hdim32":[], "hdim64":[], "hdim96":[], "hdim128":[], "hdim160":[], "hdim192":[], "hdim224":[], "hdim256":[]}
 
 import yaml
 
@@ -11,44 +14,85 @@ def register_kernels(yaml_file):
     with open(yaml_file, 'r') as file:
         traits = yaml.safe_load(file)
     
-    for op_type, kernels in traits.items():
-        for kernel in kernels:
-            hdim = f"hdim{kernel['hdim_qk']}"
-            # Verify that the hdim is valid
-            if hdim not in forward_kernels:
-                raise ValueError(f"Invalid head dimension: {hdim}")
-            
-            if op_type == 'fwd':
-                forward_kernels[hdim].append({
-                    'kernel_id': kernel['kernel_id'],
-                    'block_m': kernel['block_m'],
-                    'block_n': kernel['block_n'],
-                    'num_warps': kernel['num_warps'],
-                    "hdim_v": kernel['hdim_v'],
-                    'is_Q_in_regs': kernel.get('is_Q_in_regs', True),
-                    'share_Q_K_smem': kernel.get('share_Q_K_smem', True)
-                })
-            elif op_type == 'fwd_split':
-                forward_splitkv_kernels[hdim].append({
-                    'kernel_id': kernel['kernel_id'],
-                    'block_m': kernel['block_m'],
-                    'block_n': kernel['block_n'],
-                    'num_warps': kernel['num_warps'],
-                    "hdim_v": kernel['hdim_v'],
-                    'is_Q_in_regs': kernel.get('is_Q_in_regs', True),
-                    'share_Q_K_smem': kernel.get('share_Q_K_smem', True)
-                })
-            elif op_type == 'bwd':
-                backward_kernels[hdim].append({
-                    'kernel_id': kernel['kernel_id'],
-                    'block_m': kernel['block_m'],
-                    'block_n': kernel['block_n'],
-                    'num_warps': kernel['num_warps'],
-                    "hdim_v": kernel['hdim_v'],
-                    'atom_layout_mdq': kernel.get('atom_layout_mdq', 4),
-                    'atom_layout_msdp': kernel.get('atom_layout_msdp', 4),
-                    'atom_layout_ndkv': kernel.get('atom_layout_ndkv', 1),
-                    'is_k_in_regs': kernel.get('is_k_in_regs', True),
-                    'is_v_in_regs': kernel.get('is_v_in_regs', True),
-                    'no_double_buffer': kernel.get('no_double_buffer', True)
-                })
+    # Get the list of forward kernels
+    fwd_kernels = traits.get('fwd', [])
+    if not fwd_kernels:
+        print("Warning: No forward kernels found in YAML file")
+    # Get the list of forward-splitkv kernels
+    fwd_splitkv_kernels = traits.get('fwd_split', [])
+    if not fwd_splitkv_kernels:
+        print("Warning: No forward-splitkv kernels found in YAML file")
+    # Get the list of backward kernels
+    bwd_kernels = traits.get('bwd', [])
+    if not bwd_kernels:
+        print("Warning: No backward kernels found in YAML file")
+
+    # Register the kernels
+    for kernel in fwd_kernels:
+        hdim = f"hdim{kernel['hdim_qk']}"
+        # Verify that the hdim is valid
+        if hdim not in forward_kernels_fp16:
+            raise ValueError(f"Invalid head dimension: {hdim}")
+        
+        kernel_traits = {
+                'kernel_id': kernel['kernel_id'],
+                'block_m': kernel['block_m'],
+                'block_n': kernel['block_n'],
+                'num_warps': kernel['k_nwarps'],
+                "hdim_v": kernel['hdim_v'],
+                'is_q_in_regs': kernel['Is_Q_in_regs'],
+                'share_q_k_smem': kernel['Share_Q_K_smem']
+            }
+
+        if kernel['dtype'] == 'float16':
+            forward_kernels_fp16[hdim].append(kernel_traits)
+        elif kernel['dtype'] == 'bfloat16':
+            forward_kernels_bf16[hdim].append(kernel_traits)
+
+    for kernel in fwd_splitkv_kernels:
+        hdim = f"hdim{kernel['hdim_qk']}"
+        # Verify that the hdim is valid
+        if hdim not in forward_splitkv_kernels_fp16:
+            raise ValueError(f"Invalid head dimension: {hdim}")
+        
+        kernel_traits = {
+            'kernel_id': kernel['kernel_id'],
+            'block_m': kernel['block_m'],
+            'block_n': kernel['block_n'],
+            'num_warps': kernel['k_nwarps'],
+            "hdim_v": kernel['hdim_v'],
+            'is_splits': kernel['is_splits'],
+            'is_q_in_regs': kernel['Is_Q_in_regs'],
+            'share_q_k_smem': kernel['Share_Q_K_smem']
+        }
+
+        if kernel['dtype'] == 'float16':
+            forward_splitkv_kernels_fp16[hdim].append(kernel_traits)
+        elif kernel['dtype'] == 'bfloat16':
+            forward_splitkv_kernels_bf16[hdim].append(kernel_traits)
+
+    for kernel in bwd_kernels:  
+        hdim = f"hdim{kernel['hdim_qk']}"
+        # Verify that the hdim is valid
+        if hdim not in backward_kernels_fp16:
+            raise ValueError(f"Invalid head dimension: {hdim}")
+
+        kernel_traits = {
+            'kernel_id': kernel['kernel_id'],
+            'block_m': kernel['block_m'],
+            'block_n': kernel['block_n'],
+            'num_warps': kernel['k_nwarps'],
+            "hdim_v": kernel['hdim_v'],
+            'atom_layout_mdq': kernel['atom_layout_mdq'],
+            'atom_layout_msdp': kernel['atom_layout_msdp'],
+            'atom_layout_ndkv': kernel['atom_layout_ndkv'],
+            'is_k_in_regs': kernel['is_k_in_regs'],
+            'is_v_in_regs': kernel['is_v_in_regs'],
+            'no_double_buffer': kernel['no_double_buffer']
+        }
+
+        if kernel['dtype'] == 'float16':
+            backward_kernels_fp16[hdim].append(kernel_traits)
+        elif kernel['dtype'] == 'bfloat16':
+            backward_kernels_bf16[hdim].append(kernel_traits)
+

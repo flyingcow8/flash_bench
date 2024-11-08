@@ -1,8 +1,11 @@
 from modules.dispatch_attention_api import dispatch_flash_attention_api
 from modules.kernel_registry import (
-    forward_kernels,
-    forward_splitkv_kernels,
-    backward_kernels,
+    forward_kernels_fp16,
+    forward_kernels_bf16,
+    forward_splitkv_kernels_fp16,
+    forward_splitkv_kernels_bf16,
+    backward_kernels_fp16,
+    backward_kernels_bf16,
 )
 from modules.export_fb import create_solution_test_binary
 from modules.profiler import (
@@ -29,34 +32,49 @@ FLASH_MHA_APIS = [
 # for one mha problem
 def bench_process(config, api, params):
     # Get the head dimension from params and round up to the nearest multiple of 32
-    head_dim = params.get("head_dim")
+    head_dim = params.get("head_dim_qk")
     rounded_head_dim = ((head_dim + 31) // 32) * 32
 
     # Read forward kernels for the rounded head dimension
-    fwd_kernels = forward_kernels.get(f"hdim{rounded_head_dim}", [])
-    fwd_splitkv_kernels = forward_splitkv_kernels.get(f"hdim{rounded_head_dim}", [])
+    if params.get("dtype") == "float16":
+        fwd_kernels = forward_kernels_fp16.get(f"hdim{rounded_head_dim}", [])
+    elif params.get("dtype") == "bfloat16":
+        fwd_kernels = forward_kernels_bf16.get(f"hdim{rounded_head_dim}", [])
+
+    if params.get("dtype") == "float16":
+        fwd_splitkv_kernels = forward_splitkv_kernels_fp16.get(f"hdim{rounded_head_dim}", [])
+    elif params.get("dtype") == "bfloat16":
+        fwd_splitkv_kernels = forward_splitkv_kernels_bf16.get(f"hdim{rounded_head_dim}", [])
 
     if params.get("is_training", True):
         # Read backward kernels for the rounded head dimension
-        bwd_kernels = backward_kernels.get(f"hdim{rounded_head_dim}", [])
+        if params.get("dtype") == "float16":
+            bwd_kernels = backward_kernels_fp16.get(f"hdim{rounded_head_dim}", [])
+        elif params.get("dtype") == "bfloat16":
+            bwd_kernels = backward_kernels_bf16.get(f"hdim{rounded_head_dim}", [])
 
-    print(f"Original head_dim: {head_dim}")
-    print(f"Rounded head_dim: {rounded_head_dim}")
-    print(f"Forward kernels for rounded head_dim {rounded_head_dim}: {fwd_kernels}")
-    print(
-        f"Forward-splitkv kernels for rounded head_dim {rounded_head_dim}: {fwd_splitkv_kernels}"
-    )
-    print(f"Backward kernels for rounded head_dim {rounded_head_dim}: {bwd_kernels}")
+    print("\nCurrent parameters:")
+    for key, value in params.items():
+        print(f"{key}: {value}")
+    print("=" * 50)
+
+    print(f"Forward kernels for rounded head_dim {rounded_head_dim}:")
+    for kernel in fwd_kernels:
+        print(f"  {kernel['kernel_id']}")
+    
+    print(f"\nForward-splitkv kernels for rounded head_dim {rounded_head_dim}:")
+    for kernel in fwd_splitkv_kernels:
+        print(f"  {kernel['kernel_id']}")
+    
+    print(f"\nBackward kernels for rounded head_dim {rounded_head_dim}:")
+    for kernel in bwd_kernels:
+        print(f"  {kernel['kernel_id']}")
     print("=" * 50)
 
     fwd_results = []
     bwd_results = []
 
     print("Starting benchmark process...")
-    print(f"Number of forward kernels: {len(fwd_kernels)}")
-    print(f"Number of forward splitkv kernels: {len(fwd_splitkv_kernels)}")
-    if params.get("is_training", True):
-        print(f"Number of backward kernels: {len(bwd_kernels)}")
 
     flash_attn_varlen_apis = [
         api for api in FLASH_MHA_APIS if api.startswith("flash_attn_varlen")
@@ -155,6 +173,8 @@ def bench_process(config, api, params):
         results = []
         kernel_id = kernel["kernel_id"]
         for ns in num_splits:
+            if (ns == 1 and kernel["is_splits"]) or (ns > 1 and not kernel["is_splits"]):
+                continue
             create_solution_test_binary(
                 rounded_head_dim,
                 grid_type,
@@ -188,10 +208,12 @@ def bench_process(config, api, params):
 
     if not force_split_kernels:
         fwd_results = [
-            process_fwd_kernel(kernel, grid_type, balance_type, params)
-            for kernel in fwd_kernels
-            for grid_type in grid_types
-            for balance_type in balance_types
+            result for result in (
+                process_fwd_kernel(kernel, grid_type, balance_type, params)
+                for kernel in fwd_kernels
+                for grid_type in grid_types
+                for balance_type in balance_types
+            ) if result is not None
         ]
 
     fwd_splitkv_results = [
@@ -204,10 +226,12 @@ def bench_process(config, api, params):
 
     if params.get("is_training", True):
         bwd_results = [
-            process_bwd_kernel(kernel, grid_type, balance_type, params)
-            for kernel in bwd_kernels
-            for grid_type in grid_types
-            for balance_type in balance_types
+            result for result in (
+                process_bwd_kernel(kernel, grid_type, balance_type, params)
+                for kernel in bwd_kernels
+                for grid_type in grid_types
+                for balance_type in balance_types
+            ) if result is not None
         ]
 
     print("End of benchmark process")

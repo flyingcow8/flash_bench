@@ -4,14 +4,15 @@ project:
 
 dependencies:
   - flatbuffers
+  - tqdm
 
 input_path:
-  - input_data/proj_varlen.yaml
+  - input_data/flash_attn_func_params.yaml
   # Add more YAML file paths here as needed
   # - /path/to/proj_2.yaml
   # - /path/to/proj_3.yaml
 
-kernels_file: ./flash_attn_kernels.yaml
+kernels_file: ./kernel_traits_condidates.yaml
 
 output_dir: output
 

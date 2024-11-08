@@ -12,7 +12,8 @@ from itertools import accumulate
 
 
 def run_forward_interface(params, verbose=False):
-    head_dim = params["head_dim"]
+    head_dim_qk = params["head_dim_qk"]
+    head_dim_v = params["head_dim_v"]
     num_heads_q = params["num_heads_q"]
     num_heads_kv = params["num_heads_kv"]
     batch_size = params["batch_size"]
@@ -27,7 +28,7 @@ def run_forward_interface(params, verbose=False):
     is_training = params["is_training"]
     dtype = getattr(torch, params["dtype"])
 
-    softmax_scale = head_dim ** (-0.5)
+    softmax_scale = head_dim_qk ** (-0.5)
     window_size = (-1, -1)  # TODO: not support
     alibi_slopes = None  # TODO: not support
     attn_mask = None  # TODO: not support
@@ -37,7 +38,7 @@ def run_forward_interface(params, verbose=False):
         batch_size,
         seqlens_q[0],
         num_heads_q,
-        head_dim,
+        head_dim_qk,
         device="cuda",
         dtype=dtype,
         requires_grad=is_training,
@@ -46,7 +47,7 @@ def run_forward_interface(params, verbose=False):
         batch_size,
         seqlens_kv[0],
         num_heads_kv,
-        head_dim,
+        head_dim_qk,
         device="cuda",
         dtype=dtype,
         requires_grad=is_training,
@@ -55,7 +56,7 @@ def run_forward_interface(params, verbose=False):
         batch_size,
         seqlens_kv[0],
         num_heads_kv,
-        head_dim,
+        head_dim_v,
         device="cuda",
         dtype=dtype,
         requires_grad=is_training,
@@ -78,7 +79,8 @@ def run_forward_interface(params, verbose=False):
 
 
 def run_varlen_forward_interface(params, verbose=False):
-    head_dim = params["head_dim"]
+    head_dim_qk = params["head_dim_qk"]
+    head_dim_v = params["head_dim_v"]
     num_heads_q = params["num_heads_q"]
     num_heads_kv = params["num_heads_kv"]
     batch_size = params["batch_size"]
@@ -93,7 +95,7 @@ def run_varlen_forward_interface(params, verbose=False):
     is_training = params["is_training"]
     dtype = getattr(torch, params["dtype"])
 
-    softmax_scale = head_dim ** (-0.5)
+    softmax_scale = head_dim_qk ** (-0.5)
     window_size = (-1, -1)  # TODO: not support
     alibi_slopes = None  # TODO: not support
     attn_mask = None  # TODO: not support
@@ -102,7 +104,7 @@ def run_varlen_forward_interface(params, verbose=False):
     q = torch.randn(
         sum(seqlens_q),
         num_heads_q,
-        head_dim,
+        head_dim_qk,
         device="cuda",
         dtype=dtype,
         requires_grad=is_training,
@@ -110,7 +112,7 @@ def run_varlen_forward_interface(params, verbose=False):
     k = torch.randn(
         sum(seqlens_kv),
         num_heads_kv,
-        head_dim,
+        head_dim_qk,
         device="cuda",
         dtype=dtype,
         requires_grad=is_training,
@@ -118,7 +120,7 @@ def run_varlen_forward_interface(params, verbose=False):
     v = torch.randn(
         sum(seqlens_kv),
         num_heads_kv,
-        head_dim,
+        head_dim_v,
         device="cuda",
         dtype=dtype,
         requires_grad=is_training,
@@ -151,7 +153,8 @@ def run_varlen_forward_interface(params, verbose=False):
 
 
 def run_backward_interface(params, verbose=False):
-    head_dim = params["head_dim"]
+    head_dim_qk = params["head_dim_qk"]
+    head_dim_v = params["head_dim_v"]
     num_heads_q = params["num_heads_q"]
     num_heads_kv = params["num_heads_kv"]
     batch_size = params["batch_size"]
@@ -171,7 +174,7 @@ def run_backward_interface(params, verbose=False):
         batch_size,
         seqlens_q[0],
         num_heads_q,
-        head_dim,
+        head_dim_qk,
         device="cuda",
         dtype=dtype,
         requires_grad=is_training,
@@ -180,7 +183,7 @@ def run_backward_interface(params, verbose=False):
         batch_size,
         seqlens_kv[0],
         num_heads_kv,
-        head_dim,
+        head_dim_qk,
         device="cuda",
         dtype=dtype,
         requires_grad=is_training,
@@ -189,7 +192,7 @@ def run_backward_interface(params, verbose=False):
         batch_size,
         seqlens_kv[0],
         num_heads_kv,
-        head_dim,
+        head_dim_v,
         device="cuda",
         dtype=dtype,
         requires_grad=is_training,
@@ -203,7 +206,7 @@ def run_backward_interface(params, verbose=False):
     dq = torch.empty_like(q)
     dk = torch.empty_like(k)
     dv = torch.empty_like(v)
-    softmax_scale = head_dim ** (-0.5)
+    softmax_scale = head_dim_qk ** (-0.5)
     window_size = (-1, -1)  # TODO: not support
     alibi_slopes = None  # TODO: not support
     attn_mask = None  # TODO: not support
@@ -233,7 +236,8 @@ def run_backward_interface(params, verbose=False):
 
 
 def run_varlen_backward_interface(params, is_varlen=True, verbose=False):
-    head_dim = params["head_dim"]
+    head_dim_qk = params["head_dim_qk"]
+    head_dim_v = params["head_dim_v"]
     num_heads_q = params["num_heads_q"]
     num_heads_kv = params["num_heads_kv"]
     batch_size = params["batch_size"]
@@ -252,7 +256,7 @@ def run_varlen_backward_interface(params, is_varlen=True, verbose=False):
     q = torch.randn(
         sum(seqlens_q),
         num_heads_q,
-        head_dim,
+        head_dim_qk,
         device="cuda",
         dtype=dtype,
         requires_grad=is_training,
@@ -260,7 +264,7 @@ def run_varlen_backward_interface(params, is_varlen=True, verbose=False):
     k = torch.randn(
         sum(seqlens_kv),
         num_heads_kv,
-        head_dim,
+        head_dim_qk,
         device="cuda",
         dtype=dtype,
         requires_grad=is_training,
@@ -268,7 +272,7 @@ def run_varlen_backward_interface(params, is_varlen=True, verbose=False):
     v = torch.randn(
         sum(seqlens_kv),
         num_heads_kv,
-        head_dim,
+        head_dim_v,
         device="cuda",
         dtype=dtype,
         requires_grad=is_training,
@@ -288,7 +292,7 @@ def run_varlen_backward_interface(params, is_varlen=True, verbose=False):
     dq = torch.empty_like(q)
     dk = torch.empty_like(k)
     dv = torch.empty_like(v)
-    softmax_scale = head_dim ** (-0.5)
+    softmax_scale = head_dim_qk ** (-0.5)
     window_size = (-1, -1)  # TODO: not support
     alibi_slopes = None  # TODO: not support
     attn_mask = None  # TODO: not support
@@ -322,7 +326,8 @@ def run_varlen_backward_interface(params, is_varlen=True, verbose=False):
 
 # TODO: support paged kv cache and rope
 def run_kvcache_interface(params, verbose=False):
-    head_dim = params["head_dim"]
+    head_dim_qk = params["head_dim_qk"]
+    head_dim_v = params["head_dim_v"]
     num_heads_q = params["num_heads_q"]
     num_heads_kv = params["num_heads_kv"]
     batch_size = params["batch_size"]
@@ -338,7 +343,7 @@ def run_kvcache_interface(params, verbose=False):
         batch_size,
         seqlens_q[0],
         num_heads_q,
-        head_dim,
+        head_dim_qk,
         device="cuda",
         dtype=dtype,
     )
@@ -346,7 +351,7 @@ def run_kvcache_interface(params, verbose=False):
         batch_size,
         seqlens_kv[0],
         num_heads_kv,
-        head_dim,
+        head_dim_qk,
         device="cuda",
         dtype=dtype,
     )
@@ -354,12 +359,12 @@ def run_kvcache_interface(params, verbose=False):
         batch_size,
         seqlens_kv[0],
         num_heads_kv,
-        head_dim,
+        head_dim_v,
         device="cuda",
         dtype=dtype,
     )
 
-    softmax_scale = head_dim ** (-0.5)
+    softmax_scale = head_dim_qk ** (-0.5)
     window_size = (-1, -1)  # TODO: not support
     alibi_slopes = None  # TODO: not support
     return_softmax = False

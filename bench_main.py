@@ -12,7 +12,8 @@ from modules.export_fb import (
 from modules.export_yaml import append_results_to_yaml
 from FlashBenchData import AttentionBenchTable
 from modules.kernel_registry import register_kernels
-
+from tqdm import tqdm
+import sys
 
 def load_config(config_file):
     with open(config_file, "r") as file:
@@ -62,7 +63,6 @@ def process_input_file(config, input_file, output_dir, builder):
         print(f"Error: 'mha_api' or 'mha_params' not found in {input_file}")
         return []
 
-    # Check if the mha_api is in the allowed list
     mha_api = params_file["mha_api"]
     if mha_api not in FLASH_MHA_APIS:
         print(f"Error: Invalid 'mha_api' value '{mha_api}' in {input_file}")
@@ -74,27 +74,32 @@ def process_input_file(config, input_file, output_dir, builder):
     )
     attention_problems = []
 
-    print(f"Testing Api: {mha_api}")
-    for idx, params in enumerate(params_file["mha_params"]):
-        print(f"Running case {idx}:")
-        fwd_results, bwd_results = bench_process(config, mha_api, params)
-        best_fwd_solution = find_best_solution(fwd_results)
-        best_bwd_solution = (
-            find_best_solution(bwd_results) if params.get("is_training", True) else {}
-        )
+    print(f"Starting benchmark for input_file: {input_file}, mha_api: {mha_api}")
+    with tqdm(enumerate(params_file["mha_params"]), desc="Processing parameters", total=len(params_file["mha_params"])) as pbar:
+        for idx, params in pbar:
+            pbar.set_postfix({"Case": idx})
+            fwd_results, bwd_results = bench_process(config, mha_api, params)
+            best_fwd_solution = find_best_solution(fwd_results)
+            best_bwd_solution = (
+                find_best_solution(bwd_results) if params.get("is_training", True) else {}
+            )
 
-        append_results_to_yaml(
-            params,
-            fwd_results,
-            best_fwd_solution,
-            bwd_results,
-            best_bwd_solution,
-            output_yaml,
-        )
-        problem = create_attention_problem(
-            builder, params, best_fwd_solution, best_bwd_solution
-        )
-        attention_problems.append(problem)
+            append_results_to_yaml(
+                params,
+                fwd_results,
+                best_fwd_solution,
+                bwd_results,
+                best_bwd_solution,
+                output_yaml,
+            )
+
+            if not best_fwd_solution or (params.get("is_training", True) and not best_bwd_solution):
+                print(f"Warning: No valid solution found for case {idx}. Skipping.")
+                continue
+            problem = create_attention_problem(
+                builder, params, best_fwd_solution, best_bwd_solution
+            )
+            attention_problems.append(problem)
 
     print(f"Finished processing {input_file}\n")
     print("=" * 50 + "\n")
@@ -102,6 +107,7 @@ def process_input_file(config, input_file, output_dir, builder):
 
 
 def main():
+    os.environ["KINETO_LOG_LEVEL"] = "5" # disable kineto logging
     config = load_config("config.yaml")
     ret = validate_config(config)
     if not ret:
@@ -130,7 +136,8 @@ def main():
         print(f"Registering kernels from: {kernels_file}")
         register_kernels(kernels_file)
     else:
-        print("Warning: kernel_traits file not found or not specified in config.")
+        print("Error: kernel_traits file not found or not specified in config.")
+        sys.exit(1)
     print("=" * 50 + "\n")
 
     builder = flatbuffers.Builder(1024)
