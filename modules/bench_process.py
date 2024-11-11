@@ -17,7 +17,7 @@ from modules.splits_heuristic import num_splits_heuristic
 from FlashBenchData.GridType import GridType
 from FlashBenchData.BalanceType import BalanceType
 from FlashBenchData.KernelType import KernelType
-
+from modules.logger import logger
 
 FLASH_MHA_APIS = [
     "flash_attn_func",
@@ -53,28 +53,28 @@ def bench_process(config, api, params):
         elif params.get("dtype") == "bfloat16":
             bwd_kernels = backward_kernels_bf16.get(f"hdim{rounded_head_dim}", [])
 
-    print("\nCurrent parameters:")
+    logger.info("\nCurrent parameters:")
     for key, value in params.items():
-        print(f"{key}: {value}")
-    print("=" * 50)
+        logger.info(f"{key}: {value}")
+    logger.info("=" * 50)
 
-    print(f"Forward kernels for rounded head_dim {rounded_head_dim}:")
+    logger.info(f"Forward kernels for rounded head_dim {rounded_head_dim}:")
     for kernel in fwd_kernels:
-        print(f"  {kernel['kernel_id']}")
+        logger.info(f"  {kernel['kernel_id']}")
     
-    print(f"\nForward-splitkv kernels for rounded head_dim {rounded_head_dim}:")
+    logger.info(f"\nForward-splitkv kernels for rounded head_dim {rounded_head_dim}:")
     for kernel in fwd_splitkv_kernels:
-        print(f"  {kernel['kernel_id']}")
+        logger.info(f"  {kernel['kernel_id']}")
     
-    print(f"\nBackward kernels for rounded head_dim {rounded_head_dim}:")
+    logger.info(f"\nBackward kernels for rounded head_dim {rounded_head_dim}:")
     for kernel in bwd_kernels:
-        print(f"  {kernel['kernel_id']}")
-    print("=" * 50)
+        logger.info(f"  {kernel['kernel_id']}")
+    logger.info("=" * 50)
 
     fwd_results = []
     bwd_results = []
 
-    print("Starting benchmark process...")
+    logger.info("Starting benchmark process...")
 
     flash_attn_varlen_apis = [
         api for api in FLASH_MHA_APIS if api.startswith("flash_attn_varlen")
@@ -84,8 +84,8 @@ def bench_process(config, api, params):
     force_split_kernels = (
         api in flash_attn_varlen_apis and params.get("paged_kv", True)
     ) or (api == "flash_attn_with_kvcache" and params.get("paged_kv", True))
-    print(f"Force split kernels: {force_split_kernels}")
-    print("=" * 50)
+    logger.info(f"Force split kernels: {force_split_kernels}")
+    logger.info("=" * 50)
 
     output_dir = config["output_dir"]
     version = config["project"]["version"]
@@ -111,7 +111,7 @@ def bench_process(config, api, params):
 
         cuda_time = find_flash_fwd_cuda_time(prof)
         if cuda_time is None:
-            print(f"[Warning][Fwd] CUDA time is None!")
+            logger.warning(f"[Fwd] CUDA time is None!")
             return None
 
         return {
@@ -141,7 +141,7 @@ def bench_process(config, api, params):
 
         cuda_time = find_flash_bwd_cuda_time(prof)
         if cuda_time is None:
-            print(f"[Warning][Bwd] CUDA time is None!")
+            logger.warning(f"[Bwd] CUDA time is None!")
             return None
         
         return {
@@ -191,7 +191,7 @@ def bench_process(config, api, params):
 
             cuda_time = find_flash_fwd_splitkv_cuda_time(prof)
             if cuda_time is None:
-                print(f"[Warning][FwdSplitkv] CUDA time is None!")
+                logger.warning(f"[FwdSplitkv] CUDA time is None!")
             else:
                 results.append(
                     {
@@ -234,6 +234,6 @@ def bench_process(config, api, params):
             ) if result is not None
         ]
 
-    print("End of benchmark process")
+    logger.info("End of benchmark process")
 
     return fwd_results, bwd_results

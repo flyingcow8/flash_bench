@@ -2,6 +2,8 @@ project:
   name: FlashBench
   version: '1.0'
 
+log_level: INFO  # Can be DEBUG, INFO, WARNING, ERROR, or CRITICAL
+
 dependencies:
   - flatbuffers
   - tqdm
@@ -12,11 +14,11 @@ input_path:
   # - /path/to/proj_2.yaml
   # - /path/to/proj_3.yaml
 
-kernels_file: ./kernel_traits_condidates.yaml
+kernels_file: ./kernel_traits_candidates.yaml
 
 output_dir: output
 
-profile_verbose: True
+profile_verbose: False
 
 # if not specified, all grid types will be tested 
 grid_types:
