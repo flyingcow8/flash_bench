@@ -8,7 +8,7 @@ import flatbuffers
 
 from FlashBenchData.KernelType import KernelType
 from FlashBenchData.TAG import TAG
-
+from modules.logger import logger
 
 def convert_dtype_to_fb(dtype_str):
     """
@@ -135,7 +135,7 @@ def create_solution_test_binary(
     from FlashBenchData import AttentionProblem
 
     AttentionProblem.AttentionProblemStart(builder)
-    if kernel_type == KernelType.Fwd:
+    if kernel_type == KernelType.Fwd or kernel_type == KernelType.FwdSplitkv:
         AttentionProblem.AttentionProblemAddSolutionFwd(builder, solution)
     elif kernel_type == KernelType.Bwd:
         AttentionProblem.AttentionProblemAddSolutionBwd(builder, solution)
@@ -155,7 +155,11 @@ def create_solution_test_binary(
     AttentionBenchTable.AttentionBenchTableAddVersion(builder, version_offset)
 
     # Set tag based on kernel_type
-    tag = TAG.TestFwd if kernel_type == KernelType.Fwd else TAG.TestBwd
+    tag = (
+        TAG.TestFwd
+        if kernel_type == KernelType.Fwd or kernel_type == KernelType.FwdSplitkv
+        else TAG.TestBwd
+    )
     AttentionBenchTable.AttentionBenchTableAddTag(builder, tag)
 
     bench_table = AttentionBenchTable.AttentionBenchTableEnd(builder)

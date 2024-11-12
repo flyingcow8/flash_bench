@@ -33,6 +33,9 @@ def setup_logger(name="FlashBench"):
     # Create console handler if not already added
     if not logger.handlers:
         console_handler = logging.StreamHandler()
+        # Add formatter with prefix
+        formatter = logging.Formatter('[%(name)s] %(levelname)s: %(message)s')
+        console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
     
     return logger
