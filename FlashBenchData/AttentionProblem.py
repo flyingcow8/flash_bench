@@ -236,8 +236,8 @@ class AttentionProblem(object):
     def HashCode(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(52))
         if o != 0:
-            return self._tab.String(o + self._tab.Pos)
-        return None
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+        return 0
 
     # AttentionProblem
     def Pyapi(self):
@@ -427,7 +427,7 @@ def AddRope(builder, rope):
     AttentionProblemAddRope(builder, rope)
 
 def AttentionProblemAddHashCode(builder, hashCode):
-    builder.PrependUOffsetTRelativeSlot(24, flatbuffers.number_types.UOffsetTFlags.py_type(hashCode), 0)
+    builder.PrependUint64Slot(24, hashCode, 0)
 
 def AddHashCode(builder, hashCode):
     AttentionProblemAddHashCode(builder, hashCode)

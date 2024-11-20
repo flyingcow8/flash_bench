@@ -84,7 +84,7 @@ table AttentionProblem {
   paged_num_blocks: int32;
   append_kv: bool;
   rope: bool;
-  hash_code: string;
+  hash_code: uint64;
   pyapi: PyApiType;
   cppapi: CppApiType;
   solution: AttentionSolution;

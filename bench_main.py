@@ -141,7 +141,7 @@ def main():
             process_input_file(config, input_file, output_file, builder)
         )
 
-    bench_file = f"{output_dir}/bench_table_{timestamp}.bin"
+    bench_file = f"{output_dir}/bench_table_{config['platform']}_{timestamp}.bin"
     create_bench_table_binary(builder, all_attention_problems, config, bench_file)
     logger.info(f"Benchmark table written to: {bench_file}")
 

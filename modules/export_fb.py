@@ -71,7 +71,6 @@ def create_attention_problem(builder, params, best_solution):
     seqlens_q_vector = create_attention_int_vector(builder, params["seqlens_q"])
     seqlens_kv_vector = create_attention_int_vector(builder, params["seqlens_kv"])
     solution = create_attention_solution(builder, best_solution)
-    hash_code = builder.CreateString(params["hash_code"])
 
     # Now start the AttentionProblem
     AttentionProblem.AttentionProblemStart(builder)
@@ -79,6 +78,7 @@ def create_attention_problem(builder, params, best_solution):
         builder, DataType.float16 if params["is_fp16"] else DataType.bfloat16
     )
     AttentionProblem.AttentionProblemAddHeadDim(builder, params["head_dim"])
+    AttentionProblem.AttentionProblemAddHeadDim(builder, params["head_dim_v"])
     AttentionProblem.AttentionProblemAddNumHeadsQ(builder, params["num_heads_q"])
     AttentionProblem.AttentionProblemAddNumHeadsKv(builder, params["num_heads_kv"])
     AttentionProblem.AttentionProblemAddBatchSize(builder, params["batch_size"])
@@ -108,8 +108,8 @@ def create_attention_problem(builder, params, best_solution):
     )
     AttentionProblem.AttentionProblemAddAppendKv(builder, params["append_kv"])
     AttentionProblem.AttentionProblemAddRope(builder, params["rope"])
-    AttentionProblem.AttentionProblemAddHashcode(builder, hash_code)
-    AttentionProblem.AttentionProblemAddCppApi(
+    AttentionProblem.AttentionProblemAddHashCode(builder, params["hash_code"])
+    AttentionProblem.AttentionProblemAddCppapi(
         builder, convert_api_to_fb(params["api"])
     )
     AttentionProblem.AttentionProblemAddSolution(builder, solution)

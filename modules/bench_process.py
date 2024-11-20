@@ -70,28 +70,26 @@ def bench_process(config, params):
         else:
             bwd_kernels = backward_kernels_bf16.get(f"hdim{rounded_head_dim}", [])
 
-    logger.info("\nCurrent parameters:")
+    logger.info("Current parameters:")
     for key, value in params.items():
-        logger.info(f"{key}: {value}")
+        logger.info(f" - {key}: {value}")
     logger.info("=" * 50)
 
     if op_type == "fwd":
         logger.debug(f"Forward kernels for rounded head_dim {rounded_head_dim}:")
         for kernel in fwd_kernels:
-            logger.debug(f"  {kernel['kernel_id']}")
+            logger.debug(f" - {kernel['kernel_id']}")
         logger.debug(
-            f"\nForward-splitkv kernels for rounded head_dim {rounded_head_dim}:"
+            f"Forward-splitkv kernels for rounded head_dim {rounded_head_dim}:"
         )
         for kernel in fwd_splitkv_kernels:
-            logger.debug(f"  {kernel['kernel_id']}")
+            logger.debug(f" - {kernel['kernel_id']}")
 
     if op_type == "bwd":
-        logger.debug(f"\nBackward kernels for rounded head_dim {rounded_head_dim}:")
+        logger.debug(f"Backward kernels for rounded head_dim {rounded_head_dim}:")
         for kernel in bwd_kernels:
-            logger.debug(f"  {kernel['kernel_id']}")
+            logger.debug(f" - {kernel['kernel_id']}")
     logger.debug("=" * 50)
-
-    logger.info("Starting benchmark process...")
 
     # use flash attention's policy to determine whether to force use split kernels
     force_split_kernels = (
@@ -99,8 +97,8 @@ def bench_process(config, params):
         or api == FLASH_VARLEN_FWD
         or api == FLASH_VARLEN_INFER
     ) and params.get("paged_kv", True)
-    logger.info(f"Force split kernels: {force_split_kernels}")
-    logger.info("=" * 50)
+    logger.debug(f"Force split kernels: {force_split_kernels}")
+    logger.debug("=" * 50)
 
     profile_verbose = config["profile_verbose"]
     platform = config["platform"]
@@ -115,7 +113,7 @@ def bench_process(config, params):
     balance_types = [BalanceType().None_]
 
     def process_fwd_kernel(kernel, grid_type, balance_type, params):
-        logger.debug(f"Processing fwd kernel {kernel['kernel_id']}")
+        logger.debug(f"Processing fwd kernel: {kernel['kernel_id']}, {grid_type}, {balance_type}")
         set_solution_params(kernel["kernel_id"], KernelType().Fwd, grid_type)
         prof = dispatch_flash_attention_api(params, verbose=profile_verbose)
         cuda_time = find_flash_fwd_cuda_time(prof)
@@ -134,7 +132,7 @@ def bench_process(config, params):
         }
 
     def process_bwd_kernel(kernel, grid_type, balance_type, params):
-        logger.debug(f"Processing bwd kernel {kernel['kernel_id']}")
+        logger.debug(f"Processing bwd kernel: {kernel['kernel_id']}, {grid_type}, {balance_type}")
         set_solution_params(kernel["kernel_id"], KernelType().Bwd, grid_type)
         prof = dispatch_flash_attention_api(params, verbose=profile_verbose)
         cuda_time = find_flash_bwd_cuda_time(prof)
@@ -153,7 +151,6 @@ def bench_process(config, params):
         }
 
     def process_fwd_splitkv_kernel(kernel, grid_type, params):
-        logger.debug(f"Processing fwd-splitkv kernel {kernel['kernel_id']}")
         batch_size = params.get("batch_size")
         num_heads = params.get("num_heads_q")
         max_seqlen_q = max(params.get("seqlens_q"))
@@ -172,6 +169,7 @@ def bench_process(config, params):
         results = []
         kernel_id = kernel["kernel_id"]
         for ns in num_splits:
+            logger.debug(f"Processing fwd-splitkv kernel: {kernel_id}, {grid_type}, {ns}")
             if (ns == 1 and kernel["is_splits"]) or (
                 ns > 1 and not kernel["is_splits"]
             ):
@@ -230,7 +228,5 @@ def bench_process(config, params):
             )
             if result is not None
         ]
-
-    logger.info("End of benchmark process")
 
     return results
