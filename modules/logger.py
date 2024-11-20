@@ -20,7 +20,7 @@ def load_config():
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
     
-    return config.get("log_level", "INFO")
+    return config.get("logging", {}).get("log_level", "INFO")
 
 def setup_logger(name="FlashBench"):
     """Setup and configure logger"""

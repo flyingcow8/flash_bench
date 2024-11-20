@@ -1,10 +1,17 @@
 # FlashBench
 
 ## Compile the flatbuffers schema
+
+linux:
 ```
 flatc --python bench_data.fbs
+flatc --cpp bench_data.fbs
 ```
-flatc is the linux version, and flatc.exe is the windows version.
+windows:
+```
+flatc.exe --python bench_data.fbs
+flatc.exe --cpp bench_data.fbs
+```
 
 ## Run the unit tests
 ```

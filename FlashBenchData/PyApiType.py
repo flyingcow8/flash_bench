@@ -2,7 +2,7 @@
 
 # namespace: FlashBenchData
 
-class ApiType(object):
+class PyApiType(object):
     FlashAttnFunc = 0
     FlashAttnQKVPackedFunc = 1
     FlashAttnKVPackedFunc = 2

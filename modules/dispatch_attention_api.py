@@ -9,10 +9,27 @@ from flash_attn.flash_attn_interface import (
 )
 from modules.profiler import pytorch_profiler as profiler
 from itertools import accumulate
+import flash_attn_2_cuda as flash_attn_cuda
+from flash_attn_2_cuda import (
+    FLASH_FWD,
+    FLASH_VARLEN_FWD,
+    FLASH_BWD,
+    FLASH_VARLEN_BWD,
+    FLASH_FWD_KVCACHE,
+    FLASH_FWD_INFER,
+    FLASH_VARLEN_INFER,
+)
+
+
+def set_solution_params(kernel_id, kernel_type, grid_type, num_splits=1):
+    is_balance = False
+    flash_attn_cuda.ks_set_solution(
+        kernel_id, kernel_type, num_splits, grid_type, is_balance
+    )
 
 
 def run_forward_interface(params, verbose=False):
-    head_dim_qk = params["head_dim_qk"]
+    head_dim_qk = params["head_dim"]
     head_dim_v = params["head_dim_v"]
     num_heads_q = params["num_heads_q"]
     num_heads_kv = params["num_heads_kv"]
@@ -25,8 +42,7 @@ def run_forward_interface(params, verbose=False):
     max_seqlen_kv = max(seqlens_kv)
     dropout_p = 0.17 if params["dropout"] else 0.0
     causal = params["causal"]
-    is_training = params["is_training"]
-    dtype = getattr(torch, params["dtype"])
+    dtype = torch.float16 if params["is_fp16"] else torch.bfloat16
 
     softmax_scale = head_dim_qk ** (-0.5)
     window_size = (-1, -1)  # TODO: not support
@@ -41,7 +57,6 @@ def run_forward_interface(params, verbose=False):
         head_dim_qk,
         device="cuda",
         dtype=dtype,
-        requires_grad=is_training,
     )
     k = torch.randn(
         batch_size,
@@ -50,7 +65,6 @@ def run_forward_interface(params, verbose=False):
         head_dim_qk,
         device="cuda",
         dtype=dtype,
-        requires_grad=is_training,
     )
     v = torch.randn(
         batch_size,
@@ -59,7 +73,6 @@ def run_forward_interface(params, verbose=False):
         head_dim_v,
         device="cuda",
         dtype=dtype,
-        requires_grad=is_training,
     )
 
     return profiler(
@@ -79,7 +92,7 @@ def run_forward_interface(params, verbose=False):
 
 
 def run_varlen_forward_interface(params, verbose=False):
-    head_dim_qk = params["head_dim_qk"]
+    head_dim_qk = params["head_dim"]
     head_dim_v = params["head_dim_v"]
     num_heads_q = params["num_heads_q"]
     num_heads_kv = params["num_heads_kv"]
@@ -92,8 +105,7 @@ def run_varlen_forward_interface(params, verbose=False):
     max_seqlen_kv = max(seqlens_kv)
     dropout_p = 0.17 if params["dropout"] else 0.0
     causal = params["causal"]
-    is_training = params["is_training"]
-    dtype = getattr(torch, params["dtype"])
+    dtype = torch.float16 if params["is_fp16"] else torch.bfloat16
 
     softmax_scale = head_dim_qk ** (-0.5)
     window_size = (-1, -1)  # TODO: not support
@@ -107,7 +119,6 @@ def run_varlen_forward_interface(params, verbose=False):
         head_dim_qk,
         device="cuda",
         dtype=dtype,
-        requires_grad=is_training,
     )
     k = torch.randn(
         sum(seqlens_kv),
@@ -115,7 +126,6 @@ def run_varlen_forward_interface(params, verbose=False):
         head_dim_qk,
         device="cuda",
         dtype=dtype,
-        requires_grad=is_training,
     )
     v = torch.randn(
         sum(seqlens_kv),
@@ -123,7 +133,6 @@ def run_varlen_forward_interface(params, verbose=False):
         head_dim_v,
         device="cuda",
         dtype=dtype,
-        requires_grad=is_training,
     )
 
     cu_seqlens_q = torch.tensor(
@@ -153,7 +162,7 @@ def run_varlen_forward_interface(params, verbose=False):
 
 
 def run_backward_interface(params, verbose=False):
-    head_dim_qk = params["head_dim_qk"]
+    head_dim_qk = params["head_dim"]
     head_dim_v = params["head_dim_v"]
     num_heads_q = params["num_heads_q"]
     num_heads_kv = params["num_heads_kv"]
@@ -167,8 +176,7 @@ def run_backward_interface(params, verbose=False):
     dropout_p = 0.17 if params["dropout"] else 0.0
     causal = params["causal"]
     deterministic = params["deterministic"]
-    is_training = params["is_training"]
-    dtype = getattr(torch, params["dtype"])
+    dtype = torch.float16 if params["is_fp16"] else torch.bfloat16
 
     q = torch.randn(
         batch_size,
@@ -177,7 +185,7 @@ def run_backward_interface(params, verbose=False):
         head_dim_qk,
         device="cuda",
         dtype=dtype,
-        requires_grad=is_training,
+        requires_grad=True,
     )
     k = torch.randn(
         batch_size,
@@ -186,7 +194,7 @@ def run_backward_interface(params, verbose=False):
         head_dim_qk,
         device="cuda",
         dtype=dtype,
-        requires_grad=is_training,
+        requires_grad=True,
     )
     v = torch.randn(
         batch_size,
@@ -195,7 +203,7 @@ def run_backward_interface(params, verbose=False):
         head_dim_v,
         device="cuda",
         dtype=dtype,
-        requires_grad=is_training,
+        requires_grad=True,
     )
 
     out = torch.empty_like(q)
@@ -236,7 +244,7 @@ def run_backward_interface(params, verbose=False):
 
 
 def run_varlen_backward_interface(params, is_varlen=True, verbose=False):
-    head_dim_qk = params["head_dim_qk"]
+    head_dim_qk = params["head_dim"]
     head_dim_v = params["head_dim_v"]
     num_heads_q = params["num_heads_q"]
     num_heads_kv = params["num_heads_kv"]
@@ -250,8 +258,7 @@ def run_varlen_backward_interface(params, is_varlen=True, verbose=False):
     dropout_p = 0.17 if params["dropout"] else 0.0
     causal = params["causal"]
     deterministic = params["deterministic"]
-    is_training = params["is_training"]
-    dtype = getattr(torch, params["dtype"])
+    dtype = torch.float16 if params["is_fp16"] else torch.bfloat16
 
     q = torch.randn(
         sum(seqlens_q),
@@ -259,7 +266,7 @@ def run_varlen_backward_interface(params, is_varlen=True, verbose=False):
         head_dim_qk,
         device="cuda",
         dtype=dtype,
-        requires_grad=is_training,
+        requires_grad=True,
     )
     k = torch.randn(
         sum(seqlens_kv),
@@ -267,7 +274,7 @@ def run_varlen_backward_interface(params, is_varlen=True, verbose=False):
         head_dim_qk,
         device="cuda",
         dtype=dtype,
-        requires_grad=is_training,
+        requires_grad=True,
     )
     v = torch.randn(
         sum(seqlens_kv),
@@ -275,7 +282,7 @@ def run_varlen_backward_interface(params, is_varlen=True, verbose=False):
         head_dim_v,
         device="cuda",
         dtype=dtype,
-        requires_grad=is_training,
+        requires_grad=True,
     )
     cu_seqlens_q = torch.tensor(
         [0] + list(accumulate(seqlens_q)), dtype=torch.int32, device="cuda"
@@ -326,7 +333,7 @@ def run_varlen_backward_interface(params, is_varlen=True, verbose=False):
 
 # TODO: support paged kv cache and rope
 def run_kvcache_interface(params, verbose=False):
-    head_dim_qk = params["head_dim_qk"]
+    head_dim_qk = params["head_dim"]
     head_dim_v = params["head_dim_v"]
     num_heads_q = params["num_heads_q"]
     num_heads_kv = params["num_heads_kv"]
@@ -336,8 +343,7 @@ def run_kvcache_interface(params, verbose=False):
     assert len(seqlens_q) == batch_size
     assert len(seqlens_kv) == batch_size
     causal = params["causal"]
-    is_training = params["is_training"]
-    dtype = getattr(torch, params["dtype"])
+    dtype = torch.float16 if params["is_fp16"] else torch.bfloat16
 
     q = torch.randn(
         batch_size,
@@ -387,30 +393,23 @@ def run_kvcache_interface(params, verbose=False):
         rotary_interleaved=None,
         alibi_slopes=alibi_slopes,
         num_splits=None,
-        verbose=verbose
+        verbose=verbose,
     )
 
 
 # TODO: support qkv packed
-def dispatch_flash_attention_api(api, params, kernel_type, verbose=False):
-    if (
-        api == "flash_attn_varlen_func"
-        or api == "flash_attn_varlen_qkvpacked_func"
-        or api == "flash_attn_varlen_kvpacked_func"
-    ):
-        if kernel_type == KernelType().Fwd or kernel_type == KernelType().FwdSplitkv:
-            return run_varlen_forward_interface(params, verbose=verbose)
-        elif kernel_type == KernelType().Bwd:
-            return run_varlen_backward_interface(params, verbose=verbose)
-    elif (
-        api == "flash_attn_func"
-        or api == "flash_attn_qkvpacked_func"
-        or api == "flash_attn_kvpacked_func"
-    ):
-        if kernel_type == KernelType().Fwd or kernel_type == KernelType().FwdSplitkv:
-            return run_forward_interface(params, verbose=verbose)
-        elif kernel_type == KernelType().Bwd:
-            return run_backward_interface(params, verbose=verbose)
-    elif api == "flash_attn_with_kvcache":
-        if kernel_type == KernelType().Fwd:
-            return run_kvcache_interface(params, verbose=verbose)
+def dispatch_flash_attention_api(params, verbose=False):
+    api = params["api"]
+
+    if api == FLASH_FWD or api == FLASH_FWD_INFER:
+        return run_forward_interface(params, verbose=verbose)
+    elif api == FLASH_VARLEN_FWD or api == FLASH_VARLEN_INFER:
+        return run_varlen_forward_interface(params, verbose=verbose)
+    elif api == FLASH_BWD:
+        return run_backward_interface(params, verbose=verbose)
+    elif api == FLASH_VARLEN_BWD:
+        return run_varlen_backward_interface(params, verbose=verbose)
+    elif api == FLASH_FWD_KVCACHE:
+        return run_kvcache_interface(params, verbose=verbose)
+    else:
+        raise ValueError(f"Unsupported API: {api}")

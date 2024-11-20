@@ -2,31 +2,25 @@ project:
   name: FlashBench
   version: '1.0'
 
-log_level: INFO  # Can be DEBUG, INFO, WARNING, ERROR, or CRITICAL
+logging:
+  log_level: DEBUG  # Can be DEBUG, INFO, WARNING, ERROR, or CRITICAL
+  flash_attn_log_enable: 0
+  flash_attn_log_level: 3
+  flash_attn_log_file: False
 
 dependencies:
   - flatbuffers
   - tqdm
 
 input_path:
-  - input_data/flash_attn_func_params.yaml
+  - input_data/flash_attn_params.yaml
   # Add more YAML file paths here as needed
-  # - /path/to/proj_2.yaml
-  # - /path/to/proj_3.yaml
+
 
 kernels_file: ./kernel_traits_candidates.yaml
 
 output_dir: output
 
 profile_verbose: False
-
-# if not specified, all grid types will be tested 
-grid_types:
-  - 4
-  - 5
-
-# if not specified, all balance types will be tested 
-balance_types:
-  - 0
 
 platform: MXC500

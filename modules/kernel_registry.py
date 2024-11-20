@@ -9,6 +9,7 @@ backward_kernels_fp16 = {"hdim32":[], "hdim64":[], "hdim96":[], "hdim128":[], "h
 backward_kernels_bf16 = {"hdim32":[], "hdim64":[], "hdim96":[], "hdim128":[], "hdim160":[], "hdim192":[], "hdim224":[], "hdim256":[]}
 
 import yaml
+from modules.logger import logger
 
 def register_kernels(yaml_file):
     with open(yaml_file, 'r') as file:
@@ -17,15 +18,15 @@ def register_kernels(yaml_file):
     # Get the list of forward kernels
     fwd_kernels = traits.get('fwd', [])
     if not fwd_kernels:
-        print("Warning: No forward kernels found in YAML file")
+        logger.warning("No forward kernels found in YAML file")
     # Get the list of forward-splitkv kernels
     fwd_splitkv_kernels = traits.get('fwd_split', [])
     if not fwd_splitkv_kernels:
-        print("Warning: No forward-splitkv kernels found in YAML file")
+        logger.warning("No forward-splitkv kernels found in YAML file")
     # Get the list of backward kernels
     bwd_kernels = traits.get('bwd', [])
     if not bwd_kernels:
-        print("Warning: No backward kernels found in YAML file")
+        logger.warning("No backward kernels found in YAML file")
 
     # Register the kernels
     for kernel in fwd_kernels:

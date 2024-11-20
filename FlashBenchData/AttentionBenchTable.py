@@ -50,7 +50,7 @@ class AttentionBenchTable(object):
         return o == 0
 
     # AttentionBenchTable
-    def Tag(self):
+    def Platform(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int8Flags, o + self._tab.Pos)
@@ -81,11 +81,11 @@ def AttentionBenchTableStartProblemsVector(builder, numElems):
 def StartProblemsVector(builder, numElems):
     return AttentionBenchTableStartProblemsVector(builder, numElems)
 
-def AttentionBenchTableAddTag(builder, tag):
-    builder.PrependInt8Slot(1, tag, 0)
+def AttentionBenchTableAddPlatform(builder, platform):
+    builder.PrependInt8Slot(1, platform, 0)
 
-def AddTag(builder, tag):
-    AttentionBenchTableAddTag(builder, tag)
+def AddPlatform(builder, platform):
+    AttentionBenchTableAddPlatform(builder, platform)
 
 def AttentionBenchTableAddVersion(builder, version):
     builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(version), 0)

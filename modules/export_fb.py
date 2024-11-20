@@ -4,25 +4,46 @@ from FlashBenchData import (
     AttentionSolution,
 )
 from FlashBenchData.DataType import DataType
-import flatbuffers
+from FlashBenchData.CppApiType import CppApiType
+from FlashBenchData.Platform import Platform
+from flash_attn_2_cuda import (
+    FLASH_FWD,
+    FLASH_VARLEN_FWD,
+    FLASH_BWD,
+    FLASH_VARLEN_BWD,
+    FLASH_FWD_KVCACHE,
+    FLASH_FWD_INFER,
+    FLASH_VARLEN_INFER,
+)
 
-from FlashBenchData.KernelType import KernelType
-from FlashBenchData.TAG import TAG
-from modules.logger import logger
 
-def convert_dtype_to_fb(dtype_str):
+def convert_api_to_fb(api):
     """
-    Convert data type string from YAML to FlashBenchData DataType enum.
+    Convert API enum from YAML to FlashBenchData CppApiType enum.
     """
-
-    dtype_map = {
-        "float16": DataType.float16,
-        "bfloat16": DataType.bfloat16,
+    api_map = {
+        FLASH_FWD: CppApiType.FlashFwd,
+        FLASH_VARLEN_FWD: CppApiType.FlashVarlenFwd,
+        FLASH_BWD: CppApiType.FlashBwd,
+        FLASH_VARLEN_BWD: CppApiType.FlashVarlenBwd,
+        FLASH_FWD_KVCACHE: CppApiType.FlashFwdKvcache,
+        FLASH_FWD_INFER: CppApiType.FlashFwdInfer,
+        FLASH_VARLEN_INFER: CppApiType.FlashVarlenFwdInfer,
     }
 
-    return dtype_map.get(
-        dtype_str.lower(), DataType.bfloat16
-    )  # Default to bfloat16 if not found
+    return api_map.get(api, CppApiType.FlashFwd)
+
+
+def convert_platform_to_fb(platform):
+    """
+    Convert platform type string from config to FlashBenchData Platform enum.
+    """
+    platform_map = {
+        "MXC500": Platform.MXC500,
+        "MXC550": Platform.MXC550,
+    }
+
+    return platform_map.get(platform, Platform.MXC500)
 
 
 def create_attention_int_vector(builder, int_list):
@@ -44,17 +65,18 @@ def create_attention_solution(builder, solution):
     return AttentionSolution.AttentionSolutionEnd(builder)
 
 
-def create_attention_problem(builder, params, best_fwd_solution, best_bwd_solution):
+def create_attention_problem(builder, params, best_solution):
+
     # Create all nested first
     seqlens_q_vector = create_attention_int_vector(builder, params["seqlens_q"])
     seqlens_kv_vector = create_attention_int_vector(builder, params["seqlens_kv"])
-    solution_fwd = create_attention_solution(builder, best_fwd_solution)
-    solution_bwd = create_attention_solution(builder, best_bwd_solution)
+    solution = create_attention_solution(builder, best_solution)
+    hash_code = builder.CreateString(params["hash_code"])
 
     # Now start the AttentionProblem
     AttentionProblem.AttentionProblemStart(builder)
     AttentionProblem.AttentionProblemAddDtype(
-        builder, convert_dtype_to_fb(params["dtype"])
+        builder, DataType.float16 if params["is_fp16"] else DataType.bfloat16
     )
     AttentionProblem.AttentionProblemAddHeadDim(builder, params["head_dim"])
     AttentionProblem.AttentionProblemAddNumHeadsQ(builder, params["num_heads_q"])
@@ -62,6 +84,14 @@ def create_attention_problem(builder, params, best_fwd_solution, best_bwd_soluti
     AttentionProblem.AttentionProblemAddBatchSize(builder, params["batch_size"])
     AttentionProblem.AttentionProblemAddSeqlensQ(builder, seqlens_q_vector)
     AttentionProblem.AttentionProblemAddSeqlensKv(builder, seqlens_kv_vector)
+    AttentionProblem.AttentionProblemAddTotalSeqlensQ(
+        builder, params["total_seqlens_q"]
+    )
+    AttentionProblem.AttentionProblemAddTotalSeqlensKv(
+        builder, params["total_seqlens_kv"]
+    )
+    AttentionProblem.AttentionProblemAddMaxSeqlenQ(builder, params["max_seqlen_q"])
+    AttentionProblem.AttentionProblemAddMaxSeqlenKv(builder, params["max_seqlen_kv"])
     AttentionProblem.AttentionProblemAddCausal(builder, params["causal"])
     AttentionProblem.AttentionProblemAddDropout(builder, params["dropout"])
     AttentionProblem.AttentionProblemAddAlibi(builder, params["alibi"])
@@ -69,9 +99,20 @@ def create_attention_problem(builder, params, best_fwd_solution, best_bwd_soluti
     AttentionProblem.AttentionProblemAddWindowRight(builder, params["window_right"])
     AttentionProblem.AttentionProblemAddAttnMask(builder, params["attn_mask"])
     AttentionProblem.AttentionProblemAddDeterministic(builder, params["deterministic"])
-    AttentionProblem.AttentionProblemAddIsTraining(builder, params["is_training"])
-    AttentionProblem.AttentionProblemAddSolutionFwd(builder, solution_fwd)
-    AttentionProblem.AttentionProblemAddSolutionBwd(builder, solution_bwd)
+    AttentionProblem.AttentionProblemAddPagedKv(builder, params["paged_kv"])
+    AttentionProblem.AttentionProblemAddPagedBlockSize(
+        builder, params["paged_block_size"]
+    )
+    AttentionProblem.AttentionProblemAddPagedNumBlocks(
+        builder, params["paged_num_blocks"]
+    )
+    AttentionProblem.AttentionProblemAddAppendKv(builder, params["append_kv"])
+    AttentionProblem.AttentionProblemAddRope(builder, params["rope"])
+    AttentionProblem.AttentionProblemAddHashcode(builder, hash_code)
+    AttentionProblem.AttentionProblemAddCppApi(
+        builder, convert_api_to_fb(params["api"])
+    )
+    AttentionProblem.AttentionProblemAddSolution(builder, solution)
     return AttentionProblem.AttentionProblemEnd(builder)
 
 
@@ -90,7 +131,9 @@ def create_bench_table_binary(
     # Create an AttentionBenchTable
     AttentionBenchTable.AttentionBenchTableStart(builder)
     AttentionBenchTable.AttentionBenchTableAddProblems(builder, problems_vector)
-    AttentionBenchTable.AttentionBenchTableAddTag(builder, TAG.Deploy)
+    AttentionBenchTable.AttentionBenchTableAddPlatform(
+        builder, convert_platform_to_fb(config["platform"])
+    )
     AttentionBenchTable.AttentionBenchTableAddVersion(builder, version_offset)
     bench_table = AttentionBenchTable.AttentionBenchTableEnd(builder)
 
@@ -102,70 +145,4 @@ def create_bench_table_binary(
 
     # Now you can write this buffer to a file or send it over the network
     with open(output_file, "wb") as f:
-        f.write(buf)
-
-
-def create_solution_test_binary(
-    head_dim,
-    grid_type,
-    kernel_type,
-    kernel_id,
-    version,
-    balance_type=0,
-    num_splits=1,
-    output_dir="./",
-):
-    builder = flatbuffers.Builder(1024)
-
-    # Create string offset for kernel_id first
-    kernel_id_offset = builder.CreateString(kernel_id)
-
-    # Create AttentionSolution
-    AttentionSolution.AttentionSolutionStart(builder)
-    AttentionSolution.AttentionSolutionAddHeadDim(builder, head_dim)
-    AttentionSolution.AttentionSolutionAddGridType(builder, grid_type)
-    AttentionSolution.AttentionSolutionAddKernelType(builder, kernel_type)
-    AttentionSolution.AttentionSolutionAddNumSplits(builder, num_splits)
-    AttentionSolution.AttentionSolutionAddBalanceType(builder, balance_type)
-    AttentionSolution.AttentionSolutionAddKernelId(builder, kernel_id_offset)
-
-    solution = AttentionSolution.AttentionSolutionEnd(builder)
-
-    # Create AttentionProblem
-    from FlashBenchData import AttentionProblem
-
-    AttentionProblem.AttentionProblemStart(builder)
-    if kernel_type == KernelType.Fwd or kernel_type == KernelType.FwdSplitkv:
-        AttentionProblem.AttentionProblemAddSolutionFwd(builder, solution)
-    elif kernel_type == KernelType.Bwd:
-        AttentionProblem.AttentionProblemAddSolutionBwd(builder, solution)
-    problem = AttentionProblem.AttentionProblemEnd(builder)
-
-    # Create vector of problems
-    from FlashBenchData import AttentionBenchTable
-
-    AttentionBenchTable.AttentionBenchTableStartProblemsVector(builder, 1)
-    builder.PrependUOffsetTRelative(problem)
-    problems = builder.EndVector()
-
-    # Create AttentionBenchTable
-    version_offset = builder.CreateString(version)
-    AttentionBenchTable.AttentionBenchTableStart(builder)
-    AttentionBenchTable.AttentionBenchTableAddProblems(builder, problems)
-    AttentionBenchTable.AttentionBenchTableAddVersion(builder, version_offset)
-
-    # Set tag based on kernel_type
-    tag = (
-        TAG.TestFwd
-        if kernel_type == KernelType.Fwd or kernel_type == KernelType.FwdSplitkv
-        else TAG.TestBwd
-    )
-    AttentionBenchTable.AttentionBenchTableAddTag(builder, tag)
-
-    bench_table = AttentionBenchTable.AttentionBenchTableEnd(builder)
-
-    builder.Finish(bench_table)
-    buf = builder.Output()
-
-    with open(f"{output_dir}/test_solution.bin", "wb") as f:
         f.write(buf)

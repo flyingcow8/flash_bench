@@ -1,5 +1,10 @@
 namespace FlashBenchData;
 
+enum Platform: byte {
+  MXC500 = 0,
+  MXC550 = 1,
+}
+
 enum GridType: byte {
   NHB = 0,
   NBH,
@@ -14,7 +19,7 @@ enum BalanceType: byte {
   Mode1,
 }
 
-enum ApiType: byte {
+enum PyApiType: byte {
   FlashAttnFunc = 0,
   FlashAttnQKVPackedFunc,
   FlashAttnKVPackedFunc,
@@ -22,6 +27,16 @@ enum ApiType: byte {
   FlashAttnVarlenKVPackedFunc,
   FlashAttnVarlenFunc,
   FlashAttnWithKVCache,
+}
+
+enum CppApiType: byte {
+  FlashFwd = 0,
+  FlashVarlenFwd,
+  FlashBwd,
+  FlashVarlenBwd,
+  FlashFwdKvcache,
+  FlashFwdInfer,
+  FlashVarlenFwdInfer,
 }
 
 enum KernelType: byte {
@@ -44,20 +59,19 @@ enum DataType: byte {
   bfloat16,
 }
 
-enum TAG: byte {
-  Deploy = 0,
-  TestFwd,
-  TestBwd,
-}
-
 table AttentionProblem {
   dtype: DataType;
   head_dim: int32;
+  head_dim_v: int32;
   num_heads_q: int32;
   num_heads_kv: int32;
   batch_size: int32;
   seqlens_q: [int32];
   seqlens_kv: [int32];
+  total_seqlens_q: int32;
+  total_seqlens_kv: int32;
+  max_seqlen_q: int32;
+  max_seqlen_kv: int32;
   causal: bool;
   dropout: bool;
   alibi: bool;
@@ -69,15 +83,16 @@ table AttentionProblem {
   paged_block_size: int32;
   paged_num_blocks: int32;
   append_kv: bool;
-  api: ApiType;
-  is_training: bool;
-  solution_fwd: AttentionSolution;
-  solution_bwd: AttentionSolution;
+  rope: bool;
+  hash_code: string;
+  pyapi: PyApiType;
+  cppapi: CppApiType;
+  solution: AttentionSolution;
 }
 
 table AttentionBenchTable {
   problems: [AttentionProblem];
-  tag: TAG;
+  platform: Platform;
   version: string;
 }
 

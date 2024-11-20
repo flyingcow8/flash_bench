@@ -3,7 +3,6 @@ import os
 import flatbuffers
 from modules.export_fb import create_bench_table_binary, create_attention_problem
 from FlashBenchData import AttentionBenchTable, AttentionProblem, AttentionSolution
-from FlashBenchData.TAG import TAG
 from FlashBenchData.DataType import DataType
 from FlashBenchData.KernelType import KernelType
 
@@ -75,7 +74,6 @@ class TestExportFb(unittest.TestCase):
 
         # Verify bench table properties
         self.assertEqual(bench_table.ProblemsLength(), 1)
-        self.assertEqual(bench_table.Tag(), TAG.Deploy)
         self.assertEqual(bench_table.Version().decode('utf-8'), "1.0.0")
 
         # Verify problem properties

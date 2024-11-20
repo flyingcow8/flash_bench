@@ -1,0 +1,37 @@
+- name: input_0
+  count: 1
+  origin: 0
+  prob:
+    api: !!python/object/new::flash_attn_2_cuda.FlashAPI
+      state: 3
+    is_fp16: true
+    head_dim: 128
+    head_dim_v: 128
+    num_heads_q: 56
+    num_heads_kv: 56
+    batch_size: 2
+    seqlens_q:
+      - 4096
+      - 4096
+    seqlens_kv:
+      - 4096
+      - 4096
+    dtype: bfloat16
+    dropout: false
+    causal: true
+    alibi: false
+    window_left: -1
+    window_right: -1
+    attn_mask: false
+    deterministic: false
+    paged_kv: false
+    append_kv: false
+    paged_block_size: 0
+    paged_num_blocks: 0
+    rope: false
+    total_seqlens_q: 8192
+    total_seqlens_kv: 8192
+    max_seqlen_q: 4096
+    max_seqlen_kv: 4096
+    hash_code: "1234567890"
+

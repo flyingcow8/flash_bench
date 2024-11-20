@@ -2,7 +2,6 @@
 
 # namespace: FlashBenchData
 
-class TAG(object):
-    Deploy = 0
-    TestFwd = 1
-    TestBwd = 2
+class Platform(object):
+    MXC500 = 0
+    MXC550 = 1
