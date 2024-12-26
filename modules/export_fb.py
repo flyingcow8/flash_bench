@@ -16,6 +16,11 @@ from flash_attn_2_cuda import (
     FLASH_VARLEN_INFER,
 )
 
+PLATFORM_MAP = {
+    Platform.MXC500: "MXC500",
+    Platform.MXC550: "MXC550",
+}
+
 
 def convert_api_to_fb(api):
     """
@@ -145,4 +150,141 @@ def create_bench_table_binary(
 
     # Now you can write this buffer to a file or send it over the network
     with open(output_file, "wb") as f:
+        f.write(buf)
+
+def merge_tables(base_file, new_file, merged_file):
+    with open(base_file, "rb") as f:
+        base_buf = f.read()
+        
+    with open(new_file, "rb") as f:
+        new_buf = f.read()
+
+    base_table = AttentionBenchTable.GetRootAsAttentionBenchTable(base_buf, 0)
+    new_table = AttentionBenchTable.GetRootAsAttentionBenchTable(new_buf, 0)
+
+    # Check if versions match
+    base_version = base_table.Version().decode('utf-8') if base_table.Version() else None
+    new_version = new_table.Version().decode('utf-8') if new_table.Version() else None
+    
+    if base_version != new_version:
+        raise ValueError(f"Version mismatch: base={base_version}, new={new_version}")
+
+    # Check if platforms match
+    base_platform = base_table.Platform()
+    new_platform = new_table.Platform()
+
+    if base_platform != new_platform:
+        raise ValueError(f"Platform mismatch: base={PLATFORM_MAP[base_platform]}, new={PLATFORM_MAP[new_platform]}")
+
+    # Create a new builder for the merged table
+    builder = flatbuffers.Builder(1024)
+
+    # Create hash map of base problems for quick lookup
+    base_problems = {}
+    for i in range(base_table.ProblemsLength()):
+        base_problem = base_table.Problems(i)
+        base_problems[base_problem.HashCode()] = base_problem
+
+    # Collect problems, updating solutions for matching hash codes
+    problems = []
+    seen_hashes = set()
+    
+    # Process new problems first to get updated solutions
+    for i in range(new_table.ProblemsLength()):
+        new_problem = new_table.Problems(i)
+        hash_code = new_problem.HashCode()
+        seen_hashes.add(hash_code)
+        
+        if hash_code in base_problems:
+            # Use base problem but update its solution from new problem
+            base_prob = base_problems[hash_code]
+            problems.append((base_prob, new_problem.Solution()))
+        else:
+            # New unique problem
+            problems.append((new_problem, new_problem.Solution()))
+
+    # Add remaining base problems that weren't updated
+    for i in range(base_table.ProblemsLength()):
+        base_problem = base_table.Problems(i)
+        if base_problem.HashCode() not in seen_hashes:
+            problems.append((base_problem, base_problem.Solution()))
+
+    # Create problem vector
+    problem_offsets = []
+    for problem, solution in problems:
+        # Create seqlens vectors
+        seqlens_q = []
+        seqlens_kv = []
+        for i in range(problem.SeqlensQLength()):
+            seqlens_q.append(problem.SeqlensQ(i))
+        for i in range(problem.SeqlensKvLength()):
+            seqlens_kv.append(problem.SeqlensKv(i))
+            
+        seqlens_q_vec = create_attention_int_vector(builder, seqlens_q)
+        seqlens_kv_vec = create_attention_int_vector(builder, seqlens_kv)
+
+        # Create solution
+        solution_dict = {
+            "head_dim": solution.HeadDim(),
+            "grid_type": solution.GridType(),
+            "balance_type": solution.BalanceType(),
+            "kernel_type": solution.KernelType(),
+            "num_splits": solution.NumSplits(),
+            "kernel_id": solution.KernelId().decode('utf-8') if solution.KernelId() else ""
+        }
+        solution_offset = create_attention_solution(builder, solution_dict)
+
+        # Create problem
+        AttentionProblem.AttentionProblemStart(builder)
+        AttentionProblem.AttentionProblemAddDtype(builder, problem.Dtype())
+        AttentionProblem.AttentionProblemAddHeadDim(builder, problem.HeadDim())
+        AttentionProblem.AttentionProblemAddHeadDimV(builder, problem.HeadDimV())
+        AttentionProblem.AttentionProblemAddNumHeadsQ(builder, problem.NumHeadsQ())
+        AttentionProblem.AttentionProblemAddNumHeadsKv(builder, problem.NumHeadsKv())
+        AttentionProblem.AttentionProblemAddBatchSize(builder, problem.BatchSize())
+        AttentionProblem.AttentionProblemAddSeqlensQ(builder, seqlens_q_vec)
+        AttentionProblem.AttentionProblemAddSeqlensKv(builder, seqlens_kv_vec)
+        AttentionProblem.AttentionProblemAddTotalSeqlensQ(builder, problem.TotalSeqlensQ())
+        AttentionProblem.AttentionProblemAddTotalSeqlensKv(builder, problem.TotalSeqlensKv())
+        AttentionProblem.AttentionProblemAddMaxSeqlenQ(builder, problem.MaxSeqlenQ())
+        AttentionProblem.AttentionProblemAddMaxSeqlenKv(builder, problem.MaxSeqlenKv())
+        AttentionProblem.AttentionProblemAddCausal(builder, problem.Causal())
+        AttentionProblem.AttentionProblemAddDropout(builder, problem.Dropout())
+        AttentionProblem.AttentionProblemAddAlibi(builder, problem.Alibi())
+        AttentionProblem.AttentionProblemAddWindowLeft(builder, problem.WindowLeft())
+        AttentionProblem.AttentionProblemAddWindowRight(builder, problem.WindowRight())
+        AttentionProblem.AttentionProblemAddAttnMask(builder, problem.AttnMask())
+        AttentionProblem.AttentionProblemAddDeterministic(builder, problem.Deterministic())
+        AttentionProblem.AttentionProblemAddPagedKv(builder, problem.PagedKv())
+        AttentionProblem.AttentionProblemAddPagedBlockSize(builder, problem.PagedBlockSize())
+        AttentionProblem.AttentionProblemAddPagedNumBlocks(builder, problem.PagedNumBlocks())
+        AttentionProblem.AttentionProblemAddAppendKv(builder, problem.AppendKv())
+        AttentionProblem.AttentionProblemAddRope(builder, problem.Rope())
+        AttentionProblem.AttentionProblemAddHashCode(builder, problem.HashCode())
+        AttentionProblem.AttentionProblemAddPyapi(builder, problem.Pyapi())
+        AttentionProblem.AttentionProblemAddCppapi(builder, problem.Cppapi())
+        AttentionProblem.AttentionProblemAddSolution(builder, solution_offset)
+        problem_offsets.append(AttentionProblem.AttentionProblemEnd(builder))
+
+    # Create problems vector
+    AttentionBenchTable.AttentionBenchTableStartProblemsVector(builder, len(problem_offsets))
+    for problem in reversed(problem_offsets):
+        builder.PrependUOffsetTRelative(problem)
+    problems_vector = builder.EndVector()
+
+    # Create version string
+    version_offset = builder.CreateString(base_version)
+
+    # Create merged table
+    AttentionBenchTable.AttentionBenchTableStart(builder)
+    AttentionBenchTable.AttentionBenchTableAddProblems(builder, problems_vector)
+    AttentionBenchTable.AttentionBenchTableAddPlatform(builder, base_platform)
+    AttentionBenchTable.AttentionBenchTableAddVersion(builder, version_offset)
+    bench_table = AttentionBenchTable.AttentionBenchTableEnd(builder)
+
+    builder.Finish(bench_table)
+    buf = builder.Output()
+
+    # Write merged table to file
+    with open(merged_file, "wb") as f:
         f.write(buf)
